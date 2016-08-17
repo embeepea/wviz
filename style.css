@@ -1,4 +1,4 @@
-body, html, #map {
+body, html, canvas {
   padding: 0;
   margin: 0;
   width: 100%;
@@ -7,4 +7,24 @@ body, html, #map {
 
 body {
   font-family: sans-serif;
+}
+
+.display-none {
+  display: none;
+}
+
+.display-block {
+  display: block;
+}
+
+#message {
+  line-height: 40px;
+  padding-left: 10px;
+  padding-right: 10px;
+  height: 40px;
+  background: #ffffff;
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  border-radius: 15px
 }

@@ -118,12 +118,21 @@ module.exports = function(THREE) {
             window.removeEventListener('touchmove', touchMove);
             window.removeEventListener('touchend', touchEnd);
         };
+        var specialKeys = {
+            'Tab': true,
+            'Escape': true,
+            'Delete': true,
+            'Backspace': true
+        };
         var keyPress = function(event) {
-            if (handler.keyPress) { handler.keyPress(event); }
+            if (!(event.key in specialKeys) && handler.keyPress) { handler.keyPress(event); }
+        };
+        var keyUp = function(event) {
+            if (event.key in specialKeys && handler.keyPress) { handler.keyPress(event); }
         };
 
-
         window.addEventListener( 'keypress',   keyPress,  false );
+        window.addEventListener( 'keyup',      keyUp,     false );
         domElement.addEventListener( 'mousedown',  mouseDown,  false );
 	    domElement.addEventListener( 'mousewheel', mouseWheel, false );
 
