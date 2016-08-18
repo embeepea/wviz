@@ -63,7 +63,7 @@ module.exports = function(THREE) {
             var t = event.timeStamp;
             mouseIsDown = false;
             if (handler.mouseUp) {
-                handler.mouseUp(p, t - lastTime, lastDrag, event.button, event.shiftKey);
+                handler.mouseUp(p, t - lastTime, lastDrag, event);
             }
             lastP = p;
             lastTime = t;

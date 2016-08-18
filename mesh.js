@@ -70,7 +70,157 @@ function flowMesh(m) {
         flow.push(row);
     }
     m.flow = flow;
+    invertFlow(m);
+}
+
+function lowestNeighborBelow(m,ij) {
+    var i, j, z;
+    var zMinIJ = null;
+    var zMin = m.meshData[ij[1]][ij[0]];
+    for (i=ij[0]-1; i<=ij[0]+1; ++i) {
+        for (j=ij[1]-1; j<=ij[1]+1; ++j) {
+            if ((i!==ij[0] || j!==ij[1]) && m.inRange([i,j])) {
+                z = m.meshData[j][i];
+                if (z <= zMin) {
+                    zMin = z;
+                    zMinIJ = [i,j];
+                }
+            }
+        }
+    }
+    return zMinIJ;
+}
+
+function lowestNeighbor(m,ij) {
+    var i, j, z;
+    var zMinIJ = null;
+    var zMin = null;
+    for (i=ij[0]-1; i<=ij[0]+1; ++i) {
+        for (j=ij[1]-1; j<=ij[1]+1; ++j) {
+            if ((i!==ij[0] || j!==ij[1]) && m.inRange([i,j])) {
+                z = m.meshData[j][i];
+                if (zMin === null || z < zMin) {
+                    zMin = z;
+                    zMinIJ = [i,j];
+                }
+            }
+        }
+    }
+    return zMinIJ;
+}
+
+function ijSet(m) {
+    var h = {};
+    function key(ij) { return ij[0] + "," + ij[1]; }
+    var s = {
+        contains: function(ij) { return key(ij) in h; },
+        add: function(ij) { h[key(ij)] = true; }
+    };
+    if (m) {
+        m.forEach(function(ij) { s.add(ij); });
+    }
+    return s;
+}
+
+function lowestNeighborNotInSet(m,ij,s) {
+    var i, j, z;
+    var zMinIJ = null;
+    var zMin = null;
+    for (i=ij[0]-1; i<=ij[0]+1; ++i) {
+        for (j=ij[1]-1; j<=ij[1]+1; ++j) {
+            if ((i!==ij[0] || j!==ij[1]) && m.inRange([i,j]) && !s.contains([i,j])) {
+                z = m.meshData[j][i];
+                if (zMin === null || z < zMin) {
+                    zMin = z;
+                    zMinIJ = [i,j];
+                }
+            }
+        }
+    }
+    return zMinIJ;
+}
+
+function neighborAverage(m,ij) {
+    var i, j;
+    var s = 0;
+    var n = 0;
+    for (i=ij[0]-1; i<=ij[0]+1; ++i) {
+        for (j=ij[1]-1; j<=ij[1]+1; ++j) {
+            if ((i!==ij[0] || j!==ij[1]) && m.inRange([i,j])) {
+                s += m.meshData[j][i];
+                ++n;
+            }
+        }
+    }
+    return s/n;
+}
+
+function cycleNodes(m) {
+    function key(ij) { return ij[0] + "," + ij[1]; }
+    var marked = {};
+    var onstack = {};
+    var cNodes = [];
+    function dfs(ij) {
+        var k = key(ij);
+        marked[k] = true;
+        onstack[k] = true;
+        var n = m.flow[ij[0]][ij[1]];
+        if (n !== null) {
+            var nk = key(n);
+            if (onstack[nk]) {
+                cNodes.push(ij);
+            } else if (!marked[nk]) {
+                dfs(n);
+            }
+        }
+        onstack[k] = false;
+    }
+    var i, j, xy;
+    for (i=0; i<m.N; ++i) {
+        for (j=0; j<m.M; ++j) {
+            if (!marked[key([i,j])]) {
+                dfs([i,j]);
+            }
+        }
+    }
+    return cNodes;
+}
+
+function flowMesh2(m) {
+    // add flow to existing mesh
+    var i,j,flow = [], row, lowPoints = [];
+    var n;
+    for (i=0; i<m.N; ++i) {
+        row = [];
+        for (j=0; j<m.M; ++j) {
+            if (m.isEdge([i,j])) {
+                row.push(null);
+            } else {
+                n = lowestNeighborBelow(m,[i,j]);
+                if (n === null) {
+                    row.push(null);
+                    lowPoints.push([i,j]);
+                } else {
+                    row.push(n);
+                }
+            }
+        }
+        flow.push(row);
+    }
+    m.flow = flow;
+    m.lowPoints = lowPoints;
+    if (lowPoints.length === 0) {
+        invertFlow(m);
+    }
+    return {
+        flow: flow,
+        lowPoints: lowPoints
+    };
+}
+
+function invertFlow(m) {
     var invFlow = [];
+    var i, j, row;
     for (i=0; i<m.N; ++i) {
         row = [];
         for (j=0; j<m.M; ++j) {
@@ -80,8 +230,8 @@ function flowMesh(m) {
     }
     for (i=0; i<m.N; ++i) {
         for (j=0; j<m.M; ++j) {
-            if (flow[i][j] !== null) {
-                invFlow[flow[i][j][0]][flow[i][j][1]].push([i,j]);
+            if (m.flow[i][j] !== null) {
+                invFlow[m.flow[i][j][0]][m.flow[i][j][1]].push([i,j]);
             }
         }
     }
@@ -123,6 +273,9 @@ function parseMesh(meshString) {
         yMin: yMin,
         meshString: meshString,
         meshData: meshData,
+        isEdge(ij) {
+            return (ij[0]===0 || ij[1]===0 || ij[0]===m.N-1 || ij[1]===m.M-1);
+        },
         xy_to_ij: function(p) {
             return [Math.round((p[0] - xMin) * fx),
                     Math.round((p[1] - yMin) * fy)];
@@ -149,6 +302,12 @@ function parseMesh(meshString) {
             }
             return lines.join("\n");
         },
+        cycleNodes: function() {
+            return cycleNodes(this);
+        },
+        flowMesh2: function() {
+            return flowMesh2(m);
+        },
         grLines: function(z) {
             var D = 20;
             var segments = [];
@@ -171,7 +330,22 @@ function parseMesh(meshString) {
             return lines.join("\n");
         }
     };
-    flowMesh(m);
+    var f = flowMesh2(m);
+    console.log(sprintf('mesh has %1d local minima', f.lowPoints.length));
+    if (f.lowPoints.length === 0) {
+        var cNodes = cycleNodes(m);
+        console.log(sprintf("mesh flow has %1d cycles", cNodes.length));
+    }
+/*
+    var cNodes = cycleNodes(m);
+    cNodes.forEach(function(ij) {
+        m.meshData[ij[1]][ij[0]] += 0.001;
+    });
+    flowMesh2(m);
+    cNodes = cycleNodes(m);
+    console.log(cNodes);
+    //flowMesh(m);
+*/
     return m;
 }
 

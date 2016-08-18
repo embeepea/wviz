@@ -44,6 +44,9 @@ var commands = [
     { seq: "aw",
       action: lineWidth,
       msgfunc: function() { return "line width"; } },
+    { seq: "ac",
+      action: toggleAxes,
+      msgfunc: function() { return "toggle axes"; } },
     { seq: "l",
       action: toggleLattice,
       msgfunc: function() { return "toggle lattice"; } },
@@ -95,6 +98,10 @@ function toggleLattice() {
 }
 function toggleFaces() {
     state.faces.visible = !state.faces.visible;
+    requestRender();
+}
+function toggleAxes() {
+    state.axes.visible = !state.axes.visible;
     requestRender();
 }
 
@@ -188,6 +195,70 @@ function createCamera(width, height) {
     return camera;
 }
 
+function axis3D(options) {
+    var tipMat = new THREE.MeshPhongMaterial({
+        color: options.tipColor,
+        //side: THREE.DoubleSide,
+        shading: THREE.SmoothShading
+    });
+    var lineMat = new THREE.LineBasicMaterial({
+        color: options.axisColor,
+        linewidth: 3
+    });
+    var container = new THREE.Object3D();
+    var r = 0.2;
+    var h = 1.0;
+    var rSegs = 8;
+    var hSegs = 1;
+    var tipObj = new THREE.Object3D();
+    tipObj.add(new THREE.Mesh(new THREE.ConeGeometry(options.tipRadius,
+                                                     options.tipHeight,
+                                                     rSegs, hSegs, false, 0, 2*Math.PI), tipMat));
+    tipObj.position.set(0,options.length/2,0);
+    container.add(tipObj);
+
+    var shaftGeom = new THREE.Geometry();
+    shaftGeom.vertices.push(new THREE.Vector3(0,-options.length/2,0));
+    shaftGeom.vertices.push(new THREE.Vector3(0,options.length/2,0));
+    container.add(new THREE.LineSegments(shaftGeom, lineMat));
+
+    if (options.axis === 'Z') {
+        container.rotateX(Math.PI/2);
+    } else if (options.axis === 'X') {
+        container.rotateZ(-Math.PI/2);
+    }
+
+    return container;
+}
+function axes3D(options) {
+    var axes = new THREE.Object3D();
+    axes.add(axis3D({
+        axisColor: 0xff0000,
+        tipColor: 0xff0000,
+        axis: 'X',
+        length: options.length,
+        tipRadius: options.tipRadius,
+        tipHeight: options.tipHeight
+    }));
+    axes.add(axis3D({
+        axisColor: 0x00ff00,
+        tipColor: 0x00ff00,
+        axis: 'Y',
+        length: options.length,
+        tipRadius: options.tipRadius,
+        tipHeight: options.tipHeight
+    }));
+    axes.add(axis3D({
+        axisColor: 0x0000ff,
+        tipColor: 0x0000ff,
+        axis: 'Z',
+        length: options.length,
+        tipRadius: options.tipRadius,
+        tipHeight: options.tipHeight
+    }));
+    return axes;
+}
+
 function makeNeighborPoints() {
     if (!state.dropIJ) { return null; }
     var i = state.dropIJ[0];
@@ -228,6 +299,64 @@ function makeNeighborPoints() {
     return neighbors;
 }
 
+function latticeDistance([i0,j0],[i1,j1]) {
+    return Math.max(Math.abs(i0-i1), Math.abs(j0-j1));
+}
+
+function lowPoints() {
+    var i, j;
+    var points = [];
+    var segsGeom = new THREE.Geometry();
+    for (i=0; i<state.m.N; ++i) {
+        for (j=0; j<state.m.M; ++j) {
+            var next = state.m.flow[i][j];
+            if (next != null && latticeDistance([i,j],next) > 1) {
+                var xy = state.m.ij_to_xy([i,j]);
+                points.push([xy[0], xy[1], state.m.meshData[j][i]]);
+                segsGeom.vertices.push(new THREE.Vector3(xy[0], xy[1], state.m.meshData[j][i]));
+                var nxy = state.m.ij_to_xy(next);
+                segsGeom.vertices.push(new THREE.Vector3(nxy[0], nxy[1], state.m.meshData[next[1]][next[0]]));
+            }
+        }
+    }
+    var lows = new THREE.Object3D();
+    var redSurfaceMaterial = new THREE.MeshPhongMaterial({
+        color: 0xff0000,
+        side: THREE.DoubleSide,
+        shading: THREE.SmoothShading
+    });
+    var lineMat = new THREE.LineBasicMaterial({
+        color: 0xff0000,
+        linewidth: 2
+    });
+    console.log(sprintf("1 #lowpoints = %1d", points.length));
+    //state.m.flow2();
+    points.forEach(function(point) {
+        var mesh = new THREE.Mesh(new THREE.SphereGeometry( settings.drop.radius/2, 8, 8 ), redSurfaceMaterial);
+        mesh.position.set(point[0], point[1], point[2]);
+        lows.add( mesh );
+    });
+    lows.add(new THREE.LineSegments(segsGeom, lineMat));
+    return lows;
+}
+
+function lowPoints2() {
+    var lows = new THREE.Object3D();
+    var redSurfaceMaterial = new THREE.MeshPhongMaterial({
+        color: 0xff0000,
+        side: THREE.DoubleSide,
+        shading: THREE.SmoothShading
+    });
+    console.log(state.m);
+    state.m.lowPoints.forEach(function(ij) {
+        var xy = state.m.ij_to_xy([ij[0], ij[1]]);
+        var mesh = new THREE.Mesh(new THREE.SphereGeometry( settings.drop.radius/2, 8, 8 ), redSurfaceMaterial);
+        mesh.position.set(xy[0], xy[1], state.m.meshData[ij[1]][ij[0]]);
+        lows.add( mesh );
+    });
+    return lows;
+}
+
 function launch(canvas, width, height) {
 
     var renderer = new THREE.WebGLRenderer({
@@ -243,6 +372,12 @@ function launch(canvas, width, height) {
     world.matrixAutoUpdate = false;
     zNudgedEdges.matrixAutoUpdate = false;
     world.add(zNudgedEdges);
+    state.axes = axes3D({
+        length: 0.75,
+        tipRadius: 0.05,
+        tipHeight: 0.3
+    });
+    world.add(state.axes);
     var scene = new THREE.Scene();
     var worldContainer = new THREE.Object3D();
     worldContainer.add( world );
@@ -276,7 +411,7 @@ function launch(canvas, width, height) {
     };
 
     var m = null;
-    terrain.load('./data/dem2.mesh', settings, function(t) {
+    terrain.load('./data/dem3.mesh', settings, function(t) {
         state.m = t.m;
         state.faces = t.faces;
         world.add(t.faces);
@@ -284,6 +419,8 @@ function launch(canvas, width, height) {
         state.edges = t.edges;
         world.add(t.lattice);
         state.lattice = t.lattice;
+        var lows = lowPoints2();
+        world.add(lows);
         requestRender();
     });
 
@@ -309,14 +446,6 @@ function launch(canvas, width, height) {
         container.scale.set(settings.drop.radius,
                             settings.drop.radius,
                             settings.drop.radius);
-        //container.matrixAutoUpdate = false;
-        //container.matrixWorldNeedsUpdate = true;
-        /*
-        sphere.scale = new THREE.Vector3(settings.drop.radius,
-                                         settings.drop.radius,
-                                         settings.drop.radius);
-         */
-        //return sphere;
         return container;
     }
     state.drop = makeDrop();
@@ -324,7 +453,7 @@ function launch(canvas, width, height) {
 
     var raycaster = new THREE.Raycaster();
 
-    function pick(x,y) {
+    function pick(x,y,callback) {
         var mouse = new THREE.Vector2();
         mouse.x = ( x / window.innerWidth ) * 2 - 1;
         mouse.y = - ( y / window.innerHeight ) * 2 + 1;
@@ -346,18 +475,12 @@ function launch(canvas, width, height) {
             TwInv.getInverse(Tw);
             var p = new THREE.Vector4(minObj.point.x,minObj.point.y,minObj.point.z,1);
             p.applyMatrix4(TwInv);
-            var x = p.x / p.w;
-            var y = p.y / p.w;
-            var z = p.z / p.w;
-            //moveDropToXYZ(x,y,z);
-            var ij = state.m.xy_to_ij([x,y]);
-            moveDropToIJ(ij[0], ij[1]);
-            requestRender();
+            callback(p.x/p.w, p.y/p.w, p.z/p.w);
         }
     }
 
     var moving = world;
-    var center = world;
+    var center = state.axes;
     var frame  = camera;
 
     var kp = kbd_processor(commands,
@@ -371,17 +494,25 @@ function launch(canvas, width, height) {
     var eventTracker = EventTracker(canvas, {
         mouseDown: function(p) {
         },
-        mouseDrag: function(p, dp) {
+        mouseDrag: function(p, dp, button) {
             // Note: the axis of rotation for a mouse displacement of (dp.x,dp.y) would
             // normally be (-dp.y, dp.x, 0), but since the y direction of screen coords
             // is reversed (increasing towards the bottom of the screen), we need to negate
             // the y coord here; therefore we use (dp.y, dp.x, 0):
             var v, d, angle, L=null;
             if (state.mouseDragMode === "rotate") {
-                v = new THREE.Vector3(dp.y, dp.x, 0).normalize();
-                d = Math.sqrt(dp.x*dp.x + dp.y*dp.y);
-                angle = (d / canvas.width) * Math.PI;
-                L = new THREE.Matrix4().makeRotationAxis(v, angle);
+                if (button === 0) {
+                    v = new THREE.Vector3(dp.y, dp.x, 0).normalize();
+                    d = Math.sqrt(dp.x*dp.x + dp.y*dp.y);
+                    angle = (d / canvas.width) * Math.PI;
+                    L = new THREE.Matrix4().makeRotationAxis(v, angle);
+                } else if (button === 1) {
+                    v = new THREE.Vector3(dp.y, dp.x, 0).normalize();
+                    d = Math.sqrt(dp.x*dp.x + dp.y*dp.y);
+                    angle = (d / canvas.width) * Math.PI;
+                    if (dp.x - dp.y < 0) { angle = -angle; }
+                    L = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0,0,1), angle);
+                }
             } else if (state.mouseDragMode === "translate") {
                 L = new THREE.Matrix4().makeTranslation(dp.x/25, -dp.y/25, 0);
             }
@@ -392,11 +523,24 @@ function launch(canvas, width, height) {
                 requestRender();
             }
         },
-        mouseUp: function(p, t, d, b, s) {
+        mouseUp: function(p, t, d, event) {
             if (t < 150) {
-                if (s && b === 0) {
+                if (event.shiftKey && event.button === 0) {
                     // shift-left-click event
-                    pick(p.x, p.y);
+                    pick(p.x, p.y, function(x,y,z) {
+                        var ij = state.m.xy_to_ij([x,y]);
+                        moveDropToIJ(ij[0], ij[1]);
+                        requestRender();
+                    });
+                }
+                if (event.ctrlKey && event.button === 0) {
+                    // ctrl-left-click event
+                    console.log(sprintf("center at (%f,%f)", p.x, p.y));
+                    //pick(p.x, p.y);
+                    pick(p.x, p.y, function(x,y,z) {
+                        state.axes.position.set(x,y,z);
+                        requestRender();
+                    });
                 }
             }
         },

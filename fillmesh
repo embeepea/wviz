@@ -1,0 +1,142 @@
+#! /usr/bin/env node
+// -*-mode: js2-*-
+
+var sprintf = require('sprintf');
+var parseMesh = require('./mesh.js');
+var fs = require('fs');
+
+function output_mesh(m) {
+    console.log("MESH");
+    console.log(sprintf("%1d %1d", m.N, m.M));
+    var i, j, xy;
+    for (i=0; i<m.N; ++i) {
+        for (j=0; j<m.M; ++j) {
+            xy = m.ij_to_xy([i,j]);
+            console.log(sprintf("%f %f %f", xy[0], xy[1], m.meshData[i][j]));
+        }
+    }
+}
+
+function neighborMin(m,ij) {
+    var i, j;
+    var z, zMin = null;
+    for (i=ij[0]-1; i<=ij[0]+1; ++i) {
+        for (j=ij[1]-1; j<=ij[1]+1; ++j) {
+            if ((i!==ij[0] || j!==ij[1]) && m.inRange([i,j])) {
+                z = m.meshData[j][i];
+                if (zMin === null || z < zMin) {
+                    zMin = z;
+                }
+            }
+        }
+    }
+    return zMin;
+}
+
+fs.readFile('./data/dem2.mesh', { encoding: 'utf8' }, function(err,data) {
+    var m = parseMesh(data);
+    var N = 3000;
+    var n=0, f;
+    while (n < N) {
+        ++n;
+        f = m.flowMesh2();
+        if (f.lowPoints.length > 0) {
+            if (n % 100 === 0) { console.log(sprintf("iteration %1d: %1d low points", n, f.lowPoints.length)); }
+            f.lowPoints.forEach(function(ij) {
+                m.meshData[ij[1]][ij[0]] = neighborMin(m,ij) + 0.0001;
+            });
+        } else {
+            break;
+        }
+    }
+    if (f.lowPoints.length === 0) {
+        console.log(sprintf("eliminated all low points in %1d iterations", n));
+        var cNodes = m.cycleNodes();
+        if (cNodes.length > 0) {
+            console.log(sprintf("attempting to eliminate %1d flow cycles ...", cNodes.length));
+            cNodes.forEach(function(ij) {
+                m.meshData[ij[1]][ij[0]] += 0.001;
+            });
+            m.flowMesh2();
+            cNodes = m.cycleNodes();
+        }
+        if (cNodes.length === 0) {
+            console.log(sprintf("success (no cycles)!"));
+            output_mesh(m);
+        } else {
+            console.log(sprintf("sorry, %1d cycles remain, aborting", cNodes.length));
+        }
+    } else {
+        console.log(sprintf("sorry, %1d low points remain after %1d iterations; aborting", f.lowPoints.length, N));
+    }
+});
+
+
+
+
+// fs.readFile('./data/dem3.mesh', { encoding: 'utf8' }, function(err,data) {
+//     var m = parseMesh(data);
+//     var cNodes = m.cycleNodes();
+//     cNodes.forEach(function(ij) {
+//         m.meshData[ij[1]][ij[0]] += 0.001;
+//     });
+//     m.flowMesh2();
+//     cNodes = m.cycleNodes();
+//     cNodes.forEach(function(ij) {
+//         var n = [ij[0],ij[1]];
+//         var nodes = [n];
+//         do {
+//             n = m.flow[n[0]][n[1]];
+//             if (n[0] !== ij[0] || n[1] !== ij[1]) { nodes.push(n); }
+//         } while (n[0] !== ij[0] || n[1] !== ij[1]);
+//         console.log(nodes);
+//     });
+// 
+// });
+
+
+// function flowMesh2(m) {
+//     // add flow to existing mesh
+//     function makeFlow() {
+//         var i,j,flow = [], row, lowPoints = [];
+//         var n;
+//         for (i=0; i<m.N; ++i) {
+//             row = [];
+//             for (j=0; j<m.M; ++j) {
+//                 if (m.isEdge([i,j])) {
+//                     row.push(null);
+//                 } else {
+//                     n = lowestNeighborBelow(m,[i,j]);
+//                     if (n === null) {
+//                         row.push(null);
+//                         lowPoints.push([i,j]);
+//                     } else {
+//                         row.push(n);
+//                     }
+//                 }
+//             }
+//             flow.push(row);
+//         }
+//         return {
+//             flow: flow,
+//             lowPoints: lowPoints
+//         };
+//     }
+//     var n=0, f, done = false;
+//     while (n < 3000) {
+//         ++n;
+//         f = makeFlow();
+//         if (f.lowPoints.length > 0) {
+//             f.lowPoints.forEach(function(ij) {
+//                 m.meshData[ij[1]][ij[0]] = neighborMin(m,ij) + 0.0001;
+//             });
+//         } else {
+//             break;
+//         }
+//     }
+//     m.flow = f.flow;
+//     m.lowPoints = f.lowPoints;
+//     return;
+//     invertFlow(m);
+// }
+
