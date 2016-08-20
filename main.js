@@ -1,4 +1,12 @@
 require('./style.css');
+var sprintf = require('sprintf');
+var THREE = require('./libs/threejs/three.js');
+var EventTracker = require('./libs/EventTracker/EventTracker.js')(THREE);
+var terrain = require('./terrain.js');
+var kbd_processor = require('./kbd_processor.js');
+var rain = require('./rain.js');
+
+window.debug = require('./debug.js');
 
 var settings = {
     backgroundColor: 0x555555,
@@ -34,23 +42,25 @@ var state = {
     mouseDragMode: "rotate"
 };
 
+window.state = state;
+
 var commands = [
     { seq: "ae",
       action: toggleEdges,
-      msgfunc: function() { return "toggle edges"; } },
+      msgfunc: function() { return "edges " + (state.edges.visible ? "on" : "off"); } },
     { seq: "af",
       action: toggleFaces,
-      msgfunc: function() { return "toggle faces"; } },
+      msgfunc: function() { return "faces " + (state.faces.visible ? "on" : "off"); } },
     { seq: "aw",
       action: lineWidth,
       msgfunc: function() { return "line width"; } },
     { seq: "ac",
       action: toggleAxes,
-      msgfunc: function() { return "toggle axes"; } },
-    { seq: "l",
+      msgfunc: function() { return "axes " + (state.axes.visible ? "on" : "off"); } },
+    { seq: "al",
       action: toggleLattice,
-      msgfunc: function() { return "toggle lattice"; } },
-    { seq: "s",
+      msgfunc: function() { return "lattice " + (state.lattice.visible ? "on" : "off"); } },
+    { seq: "fs",
       action: setFallSpeed,
       msgfunc: function(n) { return sprintf("speed set to %1d", n); } },
     { seq: " ",
@@ -65,6 +75,12 @@ var commands = [
     { seq: "ds",
       action: toggleDropScale,
       msgfunc: function() { return "toggle drop scale"; } },
+    { seq: "br",
+      action: beginRain,
+      msgfunc: function() { return "begin rain"; } },
+    { seq: "er",
+      action: endRain,
+      msgfunc: function() { return "end rain"; } },
     { seq: "t",
       action: translateMode,
       msgfunc: function() { return "translate"; } },
@@ -75,7 +91,14 @@ var commands = [
 
 var requestRender;
 
-function lineWidth(a) { console.log(sprintf("lineWidth(%1d)", a)); }
+function lineWidth(a) {
+    if (a) {
+        state.edges.material.linewidth = a;
+        state.lattice.material.linewidth = a;
+        requestRender();
+    }
+    //console.log(state.edges);
+}
 
 function translateMode() {
     state.mouseDragMode = "translate";
@@ -105,13 +128,115 @@ function toggleAxes() {
     requestRender();
 }
 
+function beginRain() {
+    state.rain = rain(state.m, 10, 10);
+    state.world.add(state.rain.tobj);
+    requestRender();
+    function rainTick() {
+        state.rain.timeout = setTimeout(function() {
+            state.rain.tick();
+            requestRender();
+            rainTick();
+        }, settings.drop.fallSpeed);
+    }
+    rainTick();
+}
+
+function endRain() {
+    if (state.rain && state.rain.timeout) {
+        if (state.rain.timeout) {
+            clearTimeout(state.rain.timeout);
+        }
+        state.world.remove(state.rain.tobj);
+        state.rain = null;
+        requestRender();
+    }
+}
+
+function makeDrop(m) {
+    var geometry = new THREE.SphereGeometry( 1, 16, 16 );
+    var surfaceMaterial = new THREE.MeshPhongMaterial({
+        color: 0x3333ff,
+        side: THREE.DoubleSide,
+        shading: THREE.SmoothShading
+    });
+    var sphereScaleObj = new THREE.Object3D();
+    sphereScaleObj.scale.set(settings.drop.radius,
+                             settings.drop.radius,
+                             settings.drop.radius);
+    sphereScaleObj.add( new THREE.Mesh( geometry, surfaceMaterial ) );
+    var spherePositionObj = new THREE.Object3D();
+    spherePositionObj.add(sphereScaleObj);
+    spherePositionObj.visible = false;
+
+    var circleScaleObj = new THREE.Object3D();
+    circleScaleObj.scale.set(settings.drop.radius,
+                             settings.drop.radius,
+                             settings.drop.radius);
+    circleScaleObj.add( new THREE.Mesh( new THREE.CircleGeometry( 1, 8 ), surfaceMaterial ) );
+    var circlePositionObj = new THREE.Object3D();
+    circlePositionObj.add(circleScaleObj);
+    circlePositionObj.visible = false;
+
+    var obj = new THREE.Object3D();
+    obj.add(spherePositionObj);
+    obj.add(circlePositionObj);
+
+    return {
+        tobj: obj,
+        ij: null,
+        moveToIJ: function(i,j) {
+            var xy = m.ij_to_xy([i,j]);
+            var x = xy[0];
+            var y = xy[1];
+            var z = m.meshData[j][i]+settings.drop.radius;
+            state.drop.ij = [i,j];
+            this.ij = [i,j];
+            spherePositionObj.visible = true;
+            spherePositionObj.position.set(x,y,z);
+            circlePositionObj.visible = true;
+            circlePositionObj.position.set(x,y,settings.terrain.latticeZ);
+        },
+        moveDropToXYZ: function (x,y,z) {
+            spherePositionObj.visible = true;
+            spherePositionObj.position.set(x,y,z);
+            circlePositionObj.visible = true;
+            circlePositionObj.position.set(x,y,settings.terrain.latticeZ);
+        },
+        setRadius: function(r) {
+            sphereScaleObj.scale.set(r,r,r);
+            circleScaleObj.scale.set(r,r,r);
+        }
+
+    };
+    //        var circleMesh = new THREE.Mesh( new THREE.CircleGeometry( settings.drop.radius, 8 ), surfaceMaterial );
+    //        var projMat = new THREE.Matrix4();
+    //        projMat.set(1,0,0,0,
+    //                    0,1,0,0,
+    //                    0,0,0,settings.terrain.latticeZ,
+    //                    0,0,0,1);
+    //        var circleProjObj = new THREE.Object3D();
+    //        circleProjObj.matrixAutoUpdate = false;
+    //        circleProjObj.matrix = projMat;
+    //        circleProjObj.add(circleMesh);
+
+    //        //var circleMesh = new THREE.Mesh( new THREE.CircleGeometry( 1, 8 ), new THREE.MeshBasicMaterial( { color: 0x0000ff } ) );
+    //        var circleContainer = new THREE.Object3D();
+    //        container.add(circleContainer);
+    //        circleContainer.add(circleMesh);
+    //
+    //        circleContainer.matrixAutoUpdate = false;
+    //        circleContainer.applyMatrix(p);
+
+}
+
 function advanceOnce(a) {
-    if (state.dropIJ) {
+    if (state.drop.ij) {
         if (typeof(a)==="undefined") { a = 1; }
         while (a-- > 0) {
-            var nextIJ = state.m.flow[state.dropIJ[0]][state.dropIJ[1]];
+            var nextIJ = state.m.flow[state.drop.ij[0]][state.drop.ij[1]];
             if (nextIJ) {
-                moveDropToIJ(nextIJ[0], nextIJ[1]);
+                state.drop.moveToIJ(nextIJ[0], nextIJ[1]);
                 requestRender();
             }
         }
@@ -119,11 +244,11 @@ function advanceOnce(a) {
 }
 
 function advanceAll(a) {
-    if (state.dropIJ) {
+    if (state.drop.ij) {
         function oneStep() {
-            var nextIJ = state.m.flow[state.dropIJ[0]][state.dropIJ[1]];
+            var nextIJ = state.m.flow[state.drop.ij[0]][state.drop.ij[1]];
             if (nextIJ) {
-                moveDropToIJ(nextIJ[0], nextIJ[1]);
+                state.drop.moveToIJ(nextIJ[0], nextIJ[1]);
                 requestRender(function() {
                     setTimeout(oneStep, settings.drop.fallSpeed);
                 });
@@ -144,20 +269,6 @@ function toggleNeighbors() {
     requestRender();
 }
 
-function moveDropToIJ(i,j) {
-    if (!state.m) { return; }
-    var xy = state.m.ij_to_xy([i,j]);
-    var x = xy[0];
-    var y = xy[1];
-    var z = state.m.meshData[j][i]+settings.drop.radius;
-    state.dropIJ = [i,j];
-    state.drop.visible = true;
-    state.drop.position.set(x,y,z);
-}
-function moveDropToXYZ(x,y,z) {
-    state.drop.visible = true;
-    state.drop.position.set(x,y,z);
-}
 
 
 function toggleDropScale() {
@@ -168,12 +279,6 @@ function toggleDropScale() {
     }
 }
 
-
-var sprintf = require('sprintf');
-var THREE = require('./libs/threejs/three.js');
-var EventTracker = require('./libs/EventTracker/EventTracker.js')(THREE);
-var terrain = require('./terrain.js');
-var kbd_processor = require('./kbd_processor.js');
 
 function createCamera(width, height) {
     var camera = new THREE.PerspectiveCamera( settings.camera.fov,
@@ -260,9 +365,9 @@ function axes3D(options) {
 }
 
 function makeNeighborPoints() {
-    if (!state.dropIJ) { return null; }
-    var i = state.dropIJ[0];
-    var j = state.dropIJ[1];
+    if (!state.drop.ij) { return null; }
+    var i = state.drop.ij[0];
+    var j = state.drop.ij[1];
     var ii, jj;
     var points = [];
     for (ii=i-1; ii<=i+1; ++ii) {
@@ -290,7 +395,7 @@ function makeNeighborPoints() {
     });
     points.forEach(function(point) {
         var xy = state.m.ij_to_xy(point);
-        var next = state.m.flow[state.dropIJ[0]][state.dropIJ[1]];
+        var next = state.m.flow[state.drop.ij[0]][state.drop.ij[1]];
         var mat = (point[0]===next[0] && point[1]===next[1]) ? blueSurfaceMaterial : yellowSurfaceMaterial;
         var mesh = new THREE.Mesh(new THREE.SphereGeometry( settings.drop.radius/2, 8, 8 ), mat);
         mesh.position.set(xy[0], xy[1], state.m.meshData[point[1]][point[0]]);
@@ -421,35 +526,69 @@ function launch(canvas, width, height) {
         state.lattice = t.lattice;
         var lows = lowPoints2();
         world.add(lows);
+        state.drop = makeDrop(state.m);
+        world.add( state.drop.tobj );
         requestRender();
     });
 
-    function makeDrop() {
-        //var geometry = new THREE.SphereGeometry( settings.drop.radius, 16, 16 );
-        var geometry = new THREE.SphereGeometry( 1, 16, 16 );
-        var surfaceMaterial = new THREE.MeshPhongMaterial({
-            color: 0x3333ff,
-            side: THREE.DoubleSide,
-            shading: THREE.SmoothShading
-        });
-        var wireMaterial = new THREE.MeshBasicMaterial({
-            color: 0x000000,
-            wireframe: true,
-            wireframeLinewidth: 2
-        });
-        var sphere = new THREE.Object3D();
-        //sphere.visible = false;
-        sphere.add( new THREE.Mesh( geometry, surfaceMaterial ) );
-        var container = new THREE.Object3D();
-        container.add(sphere);
-        container.visible = false;
-        container.scale.set(settings.drop.radius,
-                            settings.drop.radius,
-                            settings.drop.radius);
-        return container;
-    }
-    state.drop = makeDrop();
-    world.add( state.drop );
+
+
+//     function makeDrop() {
+//         //var geometry = new THREE.SphereGeometry( settings.drop.radius, 16, 16 );
+//         var geometry = new THREE.SphereGeometry( 1, 16, 16 );
+//         var surfaceMaterial = new THREE.MeshPhongMaterial({
+//             color: 0x3333ff,
+//             side: THREE.DoubleSide,
+//             shading: THREE.SmoothShading
+//         });
+//         var wireMaterial = new THREE.MeshBasicMaterial({
+//             color: 0x000000,
+//             wireframe: true,
+//             wireframeLinewidth: 2
+//         });
+//         var sphere = new THREE.Object3D();
+//         //sphere.visible = false;
+//         sphere.add( new THREE.Mesh( geometry, surfaceMaterial ) );
+//         var container = new THREE.Object3D();
+//         container.add(sphere);
+//         container.visible = false;
+// 
+//         container.scale.set(settings.drop.radius,
+//                             settings.drop.radius,
+//                             settings.drop.radius);
+// 
+// 
+//         var p = new THREE.Matrix4();
+//         p.set(1,0,0,0,
+//               0,1,0,0,
+//               0,0,0,settings.terrain.latticeZ,
+//               0,0,0,1);
+//         //var circleMesh = new THREE.Mesh( new THREE.CircleGeometry( 1, 8 ), new THREE.MeshBasicMaterial( { color: 0x0000ff } ) );
+//         var circleMesh = new THREE.Mesh( new THREE.CircleGeometry( 1, 8 ), surfaceMaterial );
+//         var circleContainer = new THREE.Object3D();
+//         container.add(circleContainer);
+//         circleContainer.add(circleMesh);
+// //debug.showMatrix('0 circleContainer mat', circleContainer.matrix);
+//         circleContainer.matrixAutoUpdate = false;
+//         circleContainer.applyMatrix(p);
+// //debug.showMatrix('1 circleContainer mat', circleContainer.matrix);
+// 
+//         return container;
+//     }
+
+
+
+
+
+
+/*
+    (function() {
+        var geometry = new THREE.CircleGeometry( 1, 8 );
+        var material = new THREE.MeshBasicMaterial( { color: 0x0000ff } );
+        var circle = new THREE.Mesh( geometry, material );
+        world.add( circle );
+    }());
+*/
 
     var raycaster = new THREE.Raycaster();
 
@@ -529,7 +668,7 @@ function launch(canvas, width, height) {
                     // shift-left-click event
                     pick(p.x, p.y, function(x,y,z) {
                         var ij = state.m.xy_to_ij([x,y]);
-                        moveDropToIJ(ij[0], ij[1]);
+                        state.drop.moveToIJ(ij[0], ij[1]);
                         requestRender();
                     });
                 }
@@ -556,9 +695,7 @@ function launch(canvas, width, height) {
             } else if (state.mouseWheelMode === "dropScale") {
                 s = Math.exp(delta/20.0);
                 settings.drop.radius *= s;
-                state.drop.scale.set(settings.drop.radius,
-                                     settings.drop.radius,
-                                     settings.drop.radius);
+                state.drop.setRadius(settings.drop.radius);
                 requestRender();
             }
         },

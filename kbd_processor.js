@@ -52,11 +52,11 @@ function kbd_processor(commands, progressMsgFunc, actionMsgFunc) {
                 if (currentNode.action) {
                     if (numericPrefixString !== "") {
                         var n = parseInt(numericPrefixString,10);
-                        actionMsg(n);
                         currentNode.action(n);
+                        actionMsg(n);
                     } else {
-                        actionMsg();
                         currentNode.action();
+                        actionMsg();
                     }
                     numericPrefixString = "";
                     currentNode = root;
