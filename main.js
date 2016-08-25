@@ -72,6 +72,12 @@ var commands = [
     { seq: "n",
       action: toggleNeighbors,
       msgfunc: function() { return "toggle neighbor points"; } },
+    { seq: "h",
+      action: toggleHeightLines,
+      msgfunc: function() { return "toggle height lines"; } },
+    { seq: "x",
+      action: toggleText,
+      msgfunc: function() { return "toggle text"; } },
     { seq: "ds",
       action: toggleDropScale,
       msgfunc: function() { return "toggle drop scale"; } },
@@ -269,7 +275,27 @@ function toggleNeighbors() {
     requestRender();
 }
 
+function toggleHeightLines() {
+    if (state.heightLines) {
+        state.world.remove(state.heightLines);
+        state.heightLines = null;
+    } else {
+        state.heightLines = makeNeighborHeightLines();
+        state.world.add(state.heightLines);
+    }
+    requestRender();
+}
 
+function toggleText() {
+    if (state.text) {
+        state.world.remove(state.text);
+        state.text = null;
+    } else {
+        state.text = makeNeighborText();
+        state.world.add(state.text);
+    }
+    requestRender();
+}
 
 function toggleDropScale() {
     if (state.mouseWheelMode === "scale") {
@@ -364,10 +390,10 @@ function axes3D(options) {
     return axes;
 }
 
-function makeNeighborPoints() {
-    if (!state.drop.ij) { return null; }
-    var i = state.drop.ij[0];
-    var j = state.drop.ij[1];
+function neighborIJPoints(ij) {
+    if (!ij) { return null; }
+    var i = ij[0];
+    var j = ij[1];
     var ii, jj;
     var points = [];
     for (ii=i-1; ii<=i+1; ++ii) {
@@ -381,8 +407,13 @@ function makeNeighborPoints() {
             }
         }
     }
-    var neighbors = new THREE.Object3D();
-    
+    return points;
+}
+
+function makeNeighborPoints() {
+    var points = neighborIJPoints(state.drop.ij);
+    if (points === null) { return null; }
+
     var yellowSurfaceMaterial = new THREE.MeshPhongMaterial({
         color: 0xffff00,
         side: THREE.DoubleSide,
@@ -393,6 +424,7 @@ function makeNeighborPoints() {
         side: THREE.DoubleSide,
         shading: THREE.SmoothShading
     });
+    var neighbors = new THREE.Object3D();
     points.forEach(function(point) {
         var xy = state.m.ij_to_xy(point);
         var next = state.m.flow[state.drop.ij[0]][state.drop.ij[1]];
@@ -402,6 +434,92 @@ function makeNeighborPoints() {
         neighbors.add( mesh );
     });
     return neighbors;
+}
+
+function makeNeighborHeightLines() {
+    var points = neighborIJPoints(state.drop.ij);
+    if (points === null) { return null; }
+
+    var yellowLineMat = new THREE.LineBasicMaterial({
+        color: 0xffff00,
+        linewidth: settings.terrain.lineWidth
+    });
+    var blueLineMat = new THREE.LineBasicMaterial({
+        color: 0x0000ff,
+        linewidth: settings.terrain.lineWidth
+    });
+
+    var yellowLineGeom = new THREE.Geometry();
+    var blueLineGeom = new THREE.Geometry();
+    var yellowObj = new THREE.LineSegments(yellowLineGeom, yellowLineMat);
+    var blueObj = new THREE.LineSegments(blueLineGeom, blueLineMat);
+    var lines = new THREE.Object3D();
+    lines.add(yellowObj);
+    lines.add(blueObj);
+    points.forEach(function(point) {
+        var xy = state.m.ij_to_xy(point);
+        var p0 = new THREE.Vector3(xy[0], xy[1], settings.terrain.latticeZ);
+        var p1 = new THREE.Vector3(xy[0], xy[1], state.m.meshData[point[1]][point[0]]);
+        var next = state.m.flow[state.drop.ij[0]][state.drop.ij[1]];
+        if (point[0]===next[0] && point[1]===next[1]) {
+            blueLineGeom.vertices.push(p0, p1);
+        } else {
+            yellowLineGeom.vertices.push(p0, p1);
+        }
+    });
+    return lines;
+}
+
+var fonts = {};
+
+function makeNeighborText() {
+
+    if (!state.drop || !state.drop.ij) { return null; }
+    var textObj = new THREE.Object3D();
+    var mat = new THREE.MeshPhongMaterial( {
+        color: 0x000000,
+        side: THREE.DoubleSide,
+        shading: THREE.SmoothShading
+    });
+    var textOptions = {
+        // font — THREE.Font.
+        font: fonts.optimer,
+        // size — Float. Size of the text.
+        size: 0.01,
+        // height — Float. Thickness to extrude text. Default is 50.
+        height: 0.0,
+        // curveSegments — Integer. Number of points on the curves. Default is 12.
+        curveSegments: 2,
+        // bevelEnabled — Boolean. Turn on bevel. Default is False.
+        // bevelThickness — Float. How deep into text bevel goes. Default is 10.
+        bevelThickness: 0,
+        // bevelSize — Float. How far from text outline is bevel. Default is 8.
+        bevelSize: 0
+    };
+    var i,j;
+    var R = 5;
+    for (i=state.drop.ij[0]-R; i<=state.drop.ij[0]+R; ++i) {
+        for (j=state.drop.ij[1]-R; j<=state.drop.ij[1]+R; ++j) {
+            var xy = state.m.ij_to_xy([i,j]);
+            var oneTextObj = new THREE.Object3D();
+            var textGeom = new THREE.TextGeometry(sprintf("%.3f", state.m.meshData[j][i]),
+                                                  textOptions);
+            var textMesh = new THREE.Mesh(textGeom, mat);
+            oneTextObj.add(textMesh);
+            oneTextObj.position.set(xy[0] + textOptions.size/4,
+                                    xy[1] + textOptions.size/4,
+                                    settings.terrain.latticeZ);
+            textObj.add(oneTextObj);
+        }
+    }
+
+    /*
+    var textGeom = new THREE.TextGeometry("3.14152", textOptions);
+    var textMesh = new THREE.Mesh(textGeom, mat);
+    var textObj = new THREE.Object3D();
+    textObj.add(textMesh);
+*/
+    return textObj;
 }
 
 function latticeDistance([i0,j0],[i1,j1]) {
@@ -515,21 +633,31 @@ function launch(canvas, width, height) {
         }
     };
 
-    var m = null;
-    terrain.load('./data/dem3.mesh', settings, function(t) {
-        state.m = t.m;
-        state.faces = t.faces;
-        world.add(t.faces);
-        zNudgedEdges.add(t.edges);
-        state.edges = t.edges;
-        world.add(t.lattice);
-        state.lattice = t.lattice;
-        var lows = lowPoints2();
-        world.add(lows);
-        state.drop = makeDrop(state.m);
-        world.add( state.drop.tobj );
-        requestRender();
+    //var m = null;
+    var loader = new THREE.FontLoader();
+    loader.load( './libs/threejs/fonts/optimer_regular.typeface.json', function ( font ) {
+        fonts.optimer = font;
+        //world.add( makeNeighborText() );
+        //requestRender();
+        terrain.load('./data/dem3.mesh', settings, function(t) {
+            state.m = t.m;
+            state.faces = t.faces;
+            world.add(t.faces);
+            zNudgedEdges.add(t.edges);
+            state.edges = t.edges;
+            world.add(t.lattice);
+            state.lattice = t.lattice;
+            //var lows = lowPoints2();
+            //world.add(lows);
+            state.drop = makeDrop(state.m);
+            world.add( state.drop.tobj );
+            requestRender();
+        });
+
     });
+
+/*
+*/
 
 
 
@@ -601,7 +729,10 @@ function launch(canvas, width, height) {
         var minDist = 999999;
         var minObj = null;
         intersects.forEach(function(iobj) {
-            if (iobj.object === state.faces) {
+//            if (iobj.object === state.faces) {
+            if (iobj.object === state.faces
+                ||
+                iobj.object === state.lattice) {
                 if (iobj.distance < minDist) {
                     minDist = iobj.distance;
                     minObj = iobj;

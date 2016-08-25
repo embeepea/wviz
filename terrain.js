@@ -55,6 +55,7 @@ function load(meshURL, settings, callback) {
             }
             var dz = 0;
             var zL = settings.terrain.latticeZ;
+
             for (i=0; i<m.N; ++i) {
                 for (j=1; j<m.M; ++j) {
                     edgeGeom.vertices.push(zOffset(geom.vertices[vindex(i,j-1)], dz),
@@ -71,6 +72,21 @@ function load(meshURL, settings, callback) {
                                               zSet(geom.vertices[vindex(i,j)],zL));
                 }
             }
+            /*
+            // lattice diagonals:
+            for (i=1; i<m.N; ++i) {
+                for (j=1; j<m.M; ++j) {
+                    edgeGeom.vertices.push(zOffset(geom.vertices[vindex(i-1,j-1)],dz),
+                                           zOffset(geom.vertices[vindex(i,j)],dz));
+                    edgeGeom.vertices.push(zOffset(geom.vertices[vindex(i,j-1)],dz),
+                                           zOffset(geom.vertices[vindex(i-1,j)],dz));
+                    latticeGeom.vertices.push(zSet(geom.vertices[vindex(i-1,j-1)],zL),
+                                              zSet(geom.vertices[vindex(i,j)],zL));
+                    latticeGeom.vertices.push(zSet(geom.vertices[vindex(i,j-1)],zL),
+                                              zSet(geom.vertices[vindex(i-1,j)],zL));
+                }
+            }
+             */
             var material = new THREE.MeshPhongMaterial( {
                 color: settings.terrain.diffuseColor,
                 side: THREE.DoubleSide,
