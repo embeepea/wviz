@@ -105,6 +105,13 @@ function intArrayToString(a) {
     return a.map(function(x) { return sprintf("%1d", x); }).join(",");
 }
 
+function parseIInt(str) {
+    if (typeof(str) === "string") { return parseInt(str,10); }
+    return str;
+}
+
+function intToString(a) { return sprintf("%1d", a); }
+
 wviz.setEdges = function(v) {
     wviz.edges.visible = v;
 };
@@ -119,6 +126,13 @@ wviz.setLattice = function(v) {
 };
 wviz.setIJ = function(ij) {
     wviz.drop.moveToIJ(ij[0], ij[1]);
+};
+
+wviz.setLineWidth = function(a) {
+    if (a !== null) {
+        wviz.edges.material.linewidth = a;
+        wviz.lattice.material.linewidth = a;
+    }
 };
 
 var commands = [
@@ -228,9 +242,27 @@ var commands = [
         }
     },
 
-    { seq: "aw",
-      action: lineWidth,
-      msgfunc: function() { return "line width"; } },
+    {
+        seq: "aw",
+        action: function lineWidth(a) {
+            if (a) {
+                wviz.setLineWidth(a);
+                wviz.permalink.set("lineWidth", a);
+                wviz.updatePermalink();
+                wviz.requestRender();
+            }
+        },
+        msgfunc: function() { return sprintf("line width = %1d", wviz.edges.material.linewidth); },
+        permalink: {
+            key: "lineWidth",
+            urlKey: "aw",
+            default: null,
+            parse: parseIInt,
+            toString: intToString,
+            setState: wviz.setLineWidth
+        }
+    },
+
     { seq: "fs",
       action: setFallSpeed,
       msgfunc: function(n) { return sprintf("speed set to %1d", n); } },
@@ -265,14 +297,6 @@ var commands = [
       action: rotateMode,
       msgfunc: function() { return "rotate"; } }
 ];
-
-function lineWidth(a) {
-    if (a) {
-        wviz.edges.material.linewidth = a;
-        wviz.lattice.material.linewidth = a;
-        wviz.requestRender();
-    }
-}
 
 function translateMode() {
     wviz.mouseDragMode = "translate";
