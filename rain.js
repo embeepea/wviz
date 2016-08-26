@@ -1,7 +1,7 @@
 var keyedSet = require('./keyedSet.js');
 var THREE = require('./libs/threejs/three.js');
 
-function rain(m, d, freq) {
+function rain(settings, m, d, freq) {
     var surfaceMaterial = new THREE.MeshPhongMaterial({
         color: 0x3333ff,
         side: THREE.DoubleSide,
@@ -71,4 +71,32 @@ function rain(m, d, freq) {
     return r;
 }
 
-module.exports = rain;
+module.exports = {
+
+    //beginRain(wviz.settings, state, wviz.settings.drop.fallSpeed);
+    beginRain: function(settings, state, fallSpeed, requestRender) {
+        state.rain = rain(settings, state.m, 10, 10);
+        state.world.add(state.rain.tobj);
+        requestRender();
+        function rainTick() {
+            state.rain.timeout = setTimeout(function() {
+                state.rain.tick();
+                requestRender();
+                rainTick();
+            }, fallSpeed);
+        }
+        rainTick();
+    },
+
+    endRain: function (state, requestRender) {
+        if (state.rain && state.rain.timeout) {
+            if (state.rain.timeout) {
+                clearTimeout(state.rain.timeout);
+            }
+            state.world.remove(state.rain.tobj);
+            state.rain = null;
+            requestRender();
+        }
+    }
+
+};

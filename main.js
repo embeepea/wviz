@@ -5,10 +5,13 @@ var EventTracker = require('./libs/EventTracker/EventTracker.js')(THREE);
 var terrain = require('./terrain.js');
 var kbd_processor = require('./kbd_processor.js');
 var rain = require('./rain.js');
+var URL = require('./url.js');
 
 window.debug = require('./debug.js');
 
-var settings = {
+var wviz = {};
+
+wviz.settings = {
     backgroundColor: 0x555555,
     terrain: {
         diffuseColor: 0x88ff88,
@@ -36,6 +39,7 @@ var settings = {
         fallSpeed: 100
     }
 };
+
 
 var state = {
     mouseWheelMode: "scale",
@@ -82,10 +86,10 @@ var commands = [
       action: toggleDropScale,
       msgfunc: function() { return "toggle drop scale"; } },
     { seq: "br",
-      action: beginRain,
+      action: function() { rain.beginRain(wviz.settings, state, wviz.settings.drop.fallSpeed, requestRender); },
       msgfunc: function() { return "begin rain"; } },
     { seq: "er",
-      action: endRain,
+      action: function() { rain.endRain(state, requestRender); },
       msgfunc: function() { return "end rain"; } },
     { seq: "t",
       action: translateMode,
@@ -114,49 +118,50 @@ function rotateMode() {
 }
 
 function setFallSpeed(n) {
-    settings.drop.fallSpeed = n;
+    wviz.settings.drop.fallSpeed = n;
 }
 
+wviz.setEdges = function(v) {
+    state.edges.visible = v;
+};
+wviz.setFaces = function(v) {
+    state.faces.visible = v;
+};
+wviz.setAxes = function(v) {
+    state.axes.visible = v;
+};
+wviz.setLattice = function(v) {
+    state.lattice.visible = v;
+};
+wviz.setIJ = function(ij) {
+    state.drop.moveToIJ(ij[0], ij[1]);
+};
+
 function toggleEdges() {
-    state.edges.visible = !state.edges.visible;
+    wviz.setEdges(!state.edges.visible);
+    wviz.permalink.setEdges(state.edges.visible);
+    wviz.updatePermalink();
+    requestRender();
+}
+
+function toggleFaces() {
+    wviz.setFaces(!state.faces.visible);
+    wviz.permalink.setFaces(state.faces.visible);
+    wviz.updatePermalink();
+    requestRender();
+}
+
+function toggleAxes() {
+    wviz.setAxes(!state.axes.visible);
+    wviz.permalink.setAxes(state.axes.visible);
+    wviz.updatePermalink();
     requestRender();
 }
 function toggleLattice() {
-    state.lattice.visible = !state.lattice.visible;
+    wviz.setLattice(!state.lattice.visible);
+    wviz.permalink.setLattice(state.lattice.visible);
+    wviz.updatePermalink();
     requestRender();
-}
-function toggleFaces() {
-    state.faces.visible = !state.faces.visible;
-    requestRender();
-}
-function toggleAxes() {
-    state.axes.visible = !state.axes.visible;
-    requestRender();
-}
-
-function beginRain() {
-    state.rain = rain(state.m, 10, 10);
-    state.world.add(state.rain.tobj);
-    requestRender();
-    function rainTick() {
-        state.rain.timeout = setTimeout(function() {
-            state.rain.tick();
-            requestRender();
-            rainTick();
-        }, settings.drop.fallSpeed);
-    }
-    rainTick();
-}
-
-function endRain() {
-    if (state.rain && state.rain.timeout) {
-        if (state.rain.timeout) {
-            clearTimeout(state.rain.timeout);
-        }
-        state.world.remove(state.rain.tobj);
-        state.rain = null;
-        requestRender();
-    }
 }
 
 function makeDrop(m) {
@@ -167,18 +172,18 @@ function makeDrop(m) {
         shading: THREE.SmoothShading
     });
     var sphereScaleObj = new THREE.Object3D();
-    sphereScaleObj.scale.set(settings.drop.radius,
-                             settings.drop.radius,
-                             settings.drop.radius);
+    sphereScaleObj.scale.set(wviz.settings.drop.radius,
+                             wviz.settings.drop.radius,
+                             wviz.settings.drop.radius);
     sphereScaleObj.add( new THREE.Mesh( geometry, surfaceMaterial ) );
     var spherePositionObj = new THREE.Object3D();
     spherePositionObj.add(sphereScaleObj);
     spherePositionObj.visible = false;
 
     var circleScaleObj = new THREE.Object3D();
-    circleScaleObj.scale.set(settings.drop.radius,
-                             settings.drop.radius,
-                             settings.drop.radius);
+    circleScaleObj.scale.set(wviz.settings.drop.radius,
+                             wviz.settings.drop.radius,
+                             wviz.settings.drop.radius);
     circleScaleObj.add( new THREE.Mesh( new THREE.CircleGeometry( 1, 8 ), surfaceMaterial ) );
     var circlePositionObj = new THREE.Object3D();
     circlePositionObj.add(circleScaleObj);
@@ -195,19 +200,21 @@ function makeDrop(m) {
             var xy = m.ij_to_xy([i,j]);
             var x = xy[0];
             var y = xy[1];
-            var z = m.meshData[j][i]+settings.drop.radius;
+            var z = m.meshData[j][i]+wviz.settings.drop.radius;
             state.drop.ij = [i,j];
             this.ij = [i,j];
             spherePositionObj.visible = true;
             spherePositionObj.position.set(x,y,z);
             circlePositionObj.visible = true;
-            circlePositionObj.position.set(x,y,settings.terrain.latticeZ);
+            circlePositionObj.position.set(x,y,wviz.settings.terrain.latticeZ);
+            wviz.permalink.setIJ([i,j]);
+            wviz.updatePermalink();
         },
         moveDropToXYZ: function (x,y,z) {
             spherePositionObj.visible = true;
             spherePositionObj.position.set(x,y,z);
             circlePositionObj.visible = true;
-            circlePositionObj.position.set(x,y,settings.terrain.latticeZ);
+            circlePositionObj.position.set(x,y,wviz.settings.terrain.latticeZ);
         },
         setRadius: function(r) {
             sphereScaleObj.scale.set(r,r,r);
@@ -215,11 +222,11 @@ function makeDrop(m) {
         }
 
     };
-    //        var circleMesh = new THREE.Mesh( new THREE.CircleGeometry( settings.drop.radius, 8 ), surfaceMaterial );
+    //        var circleMesh = new THREE.Mesh( new THREE.CircleGeometry( wviz.settings.drop.radius, 8 ), surfaceMaterial );
     //        var projMat = new THREE.Matrix4();
     //        projMat.set(1,0,0,0,
     //                    0,1,0,0,
-    //                    0,0,0,settings.terrain.latticeZ,
+    //                    0,0,0,wviz.settings.terrain.latticeZ,
     //                    0,0,0,1);
     //        var circleProjObj = new THREE.Object3D();
     //        circleProjObj.matrixAutoUpdate = false;
@@ -256,7 +263,7 @@ function advanceAll(a) {
             if (nextIJ) {
                 state.drop.moveToIJ(nextIJ[0], nextIJ[1]);
                 requestRender(function() {
-                    setTimeout(oneStep, settings.drop.fallSpeed);
+                    setTimeout(oneStep, wviz.settings.drop.fallSpeed);
                 });
             }
         }
@@ -307,19 +314,19 @@ function toggleDropScale() {
 
 
 function createCamera(width, height) {
-    var camera = new THREE.PerspectiveCamera( settings.camera.fov,
+    var camera = new THREE.PerspectiveCamera( wviz.settings.camera.fov,
                                               width / height, 0.1, 1000 );
     camera.matrixAutoUpdate = false;
 
-    camera.position.set(settings.camera.position[0],
-                        settings.camera.position[1],
-                        settings.camera.position[2]);
-    camera.up.set(settings.camera.up[0],
-                  settings.camera.up[1],
-                  settings.camera.up[2]);
-    camera.lookAt(new THREE.Vector3(settings.camera.lookAt[0],
-                                    settings.camera.lookAt[1],
-                                    settings.camera.lookAt[2]));
+    camera.position.set(wviz.settings.camera.position[0],
+                        wviz.settings.camera.position[1],
+                        wviz.settings.camera.position[2]);
+    camera.up.set(wviz.settings.camera.up[0],
+                  wviz.settings.camera.up[1],
+                  wviz.settings.camera.up[2]);
+    camera.lookAt(new THREE.Vector3(wviz.settings.camera.lookAt[0],
+                                    wviz.settings.camera.lookAt[1],
+                                    wviz.settings.camera.lookAt[2]));
 
     camera.updateMatrix();
     camera.matrixWorldNeedsUpdate = true;
@@ -429,7 +436,7 @@ function makeNeighborPoints() {
         var xy = state.m.ij_to_xy(point);
         var next = state.m.flow[state.drop.ij[0]][state.drop.ij[1]];
         var mat = (point[0]===next[0] && point[1]===next[1]) ? blueSurfaceMaterial : yellowSurfaceMaterial;
-        var mesh = new THREE.Mesh(new THREE.SphereGeometry( settings.drop.radius/2, 8, 8 ), mat);
+        var mesh = new THREE.Mesh(new THREE.SphereGeometry( wviz.settings.drop.radius/2, 8, 8 ), mat);
         mesh.position.set(xy[0], xy[1], state.m.meshData[point[1]][point[0]]);
         neighbors.add( mesh );
     });
@@ -442,11 +449,11 @@ function makeNeighborHeightLines() {
 
     var yellowLineMat = new THREE.LineBasicMaterial({
         color: 0xffff00,
-        linewidth: settings.terrain.lineWidth
+        linewidth: wviz.settings.terrain.lineWidth
     });
     var blueLineMat = new THREE.LineBasicMaterial({
         color: 0x0000ff,
-        linewidth: settings.terrain.lineWidth
+        linewidth: wviz.settings.terrain.lineWidth
     });
 
     var yellowLineGeom = new THREE.Geometry();
@@ -458,7 +465,7 @@ function makeNeighborHeightLines() {
     lines.add(blueObj);
     points.forEach(function(point) {
         var xy = state.m.ij_to_xy(point);
-        var p0 = new THREE.Vector3(xy[0], xy[1], settings.terrain.latticeZ);
+        var p0 = new THREE.Vector3(xy[0], xy[1], wviz.settings.terrain.latticeZ);
         var p1 = new THREE.Vector3(xy[0], xy[1], state.m.meshData[point[1]][point[0]]);
         var next = state.m.flow[state.drop.ij[0]][state.drop.ij[1]];
         if (point[0]===next[0] && point[1]===next[1]) {
@@ -508,7 +515,7 @@ function makeNeighborText() {
             oneTextObj.add(textMesh);
             oneTextObj.position.set(xy[0] + textOptions.size/4,
                                     xy[1] + textOptions.size/4,
-                                    settings.terrain.latticeZ);
+                                    wviz.settings.terrain.latticeZ);
             textObj.add(oneTextObj);
         }
     }
@@ -555,7 +562,7 @@ function lowPoints() {
     console.log(sprintf("1 #lowpoints = %1d", points.length));
     //state.m.flow2();
     points.forEach(function(point) {
-        var mesh = new THREE.Mesh(new THREE.SphereGeometry( settings.drop.radius/2, 8, 8 ), redSurfaceMaterial);
+        var mesh = new THREE.Mesh(new THREE.SphereGeometry( wviz.settings.drop.radius/2, 8, 8 ), redSurfaceMaterial);
         mesh.position.set(point[0], point[1], point[2]);
         lows.add( mesh );
     });
@@ -573,7 +580,7 @@ function lowPoints2() {
     console.log(state.m);
     state.m.lowPoints.forEach(function(ij) {
         var xy = state.m.ij_to_xy([ij[0], ij[1]]);
-        var mesh = new THREE.Mesh(new THREE.SphereGeometry( settings.drop.radius/2, 8, 8 ), redSurfaceMaterial);
+        var mesh = new THREE.Mesh(new THREE.SphereGeometry( wviz.settings.drop.radius/2, 8, 8 ), redSurfaceMaterial);
         mesh.position.set(xy[0], xy[1], state.m.meshData[ij[1]][ij[0]]);
         lows.add( mesh );
     });
@@ -586,7 +593,7 @@ function launch(canvas, width, height) {
         canvas: canvas
     });
     renderer.setSize( width, height );
-    renderer.setClearColor(settings.backgroundColor, 1);
+    renderer.setClearColor(wviz.settings.backgroundColor, 1);
 
     var camera = createCamera(width, height);
     var world = new THREE.Object3D();
@@ -607,14 +614,14 @@ function launch(canvas, width, height) {
     scene.add( camera );
     scene.add( worldContainer );
     scene.add( new THREE.AmbientLight( 0x222222 ) );
-    settings.lights.point.forEach(function(lt) {
+    wviz.settings.lights.point.forEach(function(lt) {
         var light = new THREE.PointLight( lt.color, lt.intensity, lt.distance, lt.decay );
         light.position.set(lt.position[0], lt.position[1], lt.position[2]);
         scene.add( light );
     });
 
     function render() {
-        var T = new THREE.Matrix4().makeTranslation(0, 0, settings.terrain.edgeZNudge);
+        var T = new THREE.Matrix4().makeTranslation(0, 0, wviz.settings.terrain.edgeZNudge);
         var M = eventTracker.computeTransform(zNudgedEdges,camera,camera, T);
         zNudgedEdges.matrix = M;
         zNudgedEdges.matrixWorldNeedsUpdate = true;
@@ -639,7 +646,7 @@ function launch(canvas, width, height) {
         fonts.optimer = font;
         //world.add( makeNeighborText() );
         //requestRender();
-        terrain.load('./data/dem3.mesh', settings, function(t) {
+        terrain.load('./data/dem3.mesh', wviz.settings, function(t) {
             state.m = t.m;
             state.faces = t.faces;
             world.add(t.faces);
@@ -651,6 +658,35 @@ function launch(canvas, width, height) {
             //world.add(lows);
             state.drop = makeDrop(state.m);
             world.add( state.drop.tobj );
+
+            wviz.permalink = Permalink(URL({url: window.location.toString()}));
+            wviz.updatePermalink = function() {
+                window.history.replaceState({}, "", wviz.permalink.toString());
+            };
+            if (wviz.permalink.haveMM()) {
+                wviz.setMM(wviz.permalink.getMM());
+            }
+            if (wviz.permalink.haveCenter()) {
+                wviz.setCenter(wviz.permalink.getCenter());
+            }
+            if (wviz.permalink.haveEdges()) {
+                wviz.setEdges(wviz.permalink.getEdges());
+            }
+            if (wviz.permalink.haveFaces()) {
+                wviz.setFaces(wviz.permalink.getFaces());
+            }
+            if (wviz.permalink.haveAxes()) {
+                wviz.setAxes(wviz.permalink.getAxes());
+            }
+            if (wviz.permalink.haveLattice()) {
+                wviz.setLattice(wviz.permalink.getLattice());
+            }
+            if (wviz.permalink.haveIJ()) {
+                wviz.setIJ(wviz.permalink.getIJ());
+            }
+            //wviz.permalink.setZoom(wviz.map.getZoom());
+            //window.history.replaceState({}, "", wviz.permalink.toString());
+
             requestRender();
         });
 
@@ -662,7 +698,7 @@ function launch(canvas, width, height) {
 
 
 //     function makeDrop() {
-//         //var geometry = new THREE.SphereGeometry( settings.drop.radius, 16, 16 );
+//         //var geometry = new THREE.SphereGeometry( wviz.settings.drop.radius, 16, 16 );
 //         var geometry = new THREE.SphereGeometry( 1, 16, 16 );
 //         var surfaceMaterial = new THREE.MeshPhongMaterial({
 //             color: 0x3333ff,
@@ -681,15 +717,15 @@ function launch(canvas, width, height) {
 //         container.add(sphere);
 //         container.visible = false;
 // 
-//         container.scale.set(settings.drop.radius,
-//                             settings.drop.radius,
-//                             settings.drop.radius);
+//         container.scale.set(wviz.settings.drop.radius,
+//                             wviz.settings.drop.radius,
+//                             wviz.settings.drop.radius);
 // 
 // 
 //         var p = new THREE.Matrix4();
 //         p.set(1,0,0,0,
 //               0,1,0,0,
-//               0,0,0,settings.terrain.latticeZ,
+//               0,0,0,wviz.settings.terrain.latticeZ,
 //               0,0,0,1);
 //         //var circleMesh = new THREE.Mesh( new THREE.CircleGeometry( 1, 8 ), new THREE.MeshBasicMaterial( { color: 0x0000ff } ) );
 //         var circleMesh = new THREE.Mesh( new THREE.CircleGeometry( 1, 8 ), surfaceMaterial );
@@ -753,6 +789,14 @@ function launch(canvas, width, height) {
     var center = state.axes;
     var frame  = camera;
 
+    wviz.setMM = function(m) {
+        moving.matrix.copy(m);
+        moving.matrixWorldNeedsUpdate = true;
+    };
+    wviz.setCenter = function(c) {
+        center.position.set(c[0], c[1], c[2]);
+    };
+
     var kp = kbd_processor(commands,
                            function(msg) {
                                displayMessage(msg);
@@ -789,6 +833,8 @@ function launch(canvas, width, height) {
             if (L) {
                 var M = eventTracker.computeTransform(moving,center,frame, L);
                 moving.matrix.multiplyMatrices(moving.matrix, M);
+                wviz.permalink.setMM(moving.matrix);
+                wviz.updatePermalink();
                 moving.matrixWorldNeedsUpdate = true;
                 requestRender();
             }
@@ -808,7 +854,9 @@ function launch(canvas, width, height) {
                     console.log(sprintf("center at (%f,%f)", p.x, p.y));
                     //pick(p.x, p.y);
                     pick(p.x, p.y, function(x,y,z) {
-                        state.axes.position.set(x,y,z);
+                        wviz.setCenter([x,y,z]);
+                        wviz.permalink.setCenter([x,y,z]);
+                        wviz.updatePermalink();
                         requestRender();
                     });
                 }
@@ -821,12 +869,14 @@ function launch(canvas, width, height) {
                 var R = new THREE.Matrix4().makeScale(s,s,s);
                 var M = eventTracker.computeTransform(moving,center,frame, R);
                 moving.matrix.multiplyMatrices(moving.matrix, M);
+                wviz.permalink.setMM(moving.matrix);
+                wviz.updatePermalink();
                 moving.matrixWorldNeedsUpdate = true;
                 requestRender();
             } else if (state.mouseWheelMode === "dropScale") {
                 s = Math.exp(delta/20.0);
-                settings.drop.radius *= s;
-                state.drop.setRadius(settings.drop.radius);
+                wviz.settings.drop.radius *= s;
+                state.drop.setRadius(wviz.settings.drop.radius);
                 requestRender();
             }
         },
@@ -861,6 +911,134 @@ function fadeMessage(msg) {
     });
 }
 
+function parseMatrix4(str) {
+    var m = new THREE.Matrix4();
+    var e = str.split(/,/).map(function(s) { return parseFloat(s); });
+    m.set(e[0], e[1], e[2], e[3],
+          e[4], e[5], e[6], e[7],
+          e[8], e[9], e[10], e[11],
+          e[12], e[13], e[14], e[15]);
+    return m;
+}
+
+function matrix4ToString(m) {
+    var e = m.elements;
+    return sprintf("%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f",
+                   e[0],e[4],e[ 8],e[12],
+                   e[1],e[5],e[ 9],e[13],
+                   e[2],e[6],e[10],e[14],
+                   e[3],e[7],e[11],e[15]);
+}
+
+function parseFloatArray(str) {
+    return str.split(/,/).map(function(s) { return parseFloat(s); });
+}
+
+function floatArrayToString(a) {
+    return a.map(function(x) { return sprintf("%.4f", x); }).join(",");
+}
+
+function parseIntArray(str) {
+    return str.split(/,/).map(function(s) { return parseInt(s,10); });
+}
+
+function intArrayToString(a) {
+    return a.map(function(x) { return sprintf("%1d", x); }).join(",");
+}
+
+function parseBoolean(v) {
+    return (v !== false
+            &&
+            v !== "0"
+            &&
+            v !== 0);
+}
+
+function booleanToString(v) {
+    return v ? "1" : "0";
+}
+
+// A utility object for constructing and extracting information from the
+// application URL:
+function Permalink(url) {
+    var mm = null, c = null, ae = null, af = null, ac = null, al = null, ij = null;
+    if ('mm' in url.params) {
+        mm = parseMatrix4(url.params.mm);
+    }
+    if ('c' in url.params) {
+        c = parseFloatArray(url.params.c);
+    }
+    if ('ae' in url.params) {
+        ae = parseBoolean(url.params.ae);
+    }
+    if ('af' in url.params) {
+        af = parseBoolean(url.params.af);
+    }
+    if ('ac' in url.params) {
+        ac = parseBoolean(url.params.ac);
+    }
+    if ('al' in url.params) {
+        al = parseBoolean(url.params.al);
+    }
+    if ('ij' in url.params) {
+        ij = parseIntArray(url.params.ij);
+    }
+    return {
+        toString : function() { return url.toString(); },
+        haveMM: function() { return mm !== null; },
+        getMM: function() { return mm; },
+        setMM: function(m) {
+            if (!mm) { mm = new THREE.Matrix4(); }
+            mm.copy(m);
+            url.params.mm = matrix4ToString(mm);
+        },
+        haveCenter: function() { return c !== null; },
+        getCenter: function() { return c; },
+        setCenter: function(a) {
+            if (c === null) { c = [0,0,0]; }
+            var i;
+            for (i=0; i<3; ++i) { c[i] = a[i]; }
+            url.params.c = floatArrayToString(a);
+        },
+
+        haveEdges: function() { return ae !== null; },
+        getEdges: function() { return ae; },
+        setEdges: function(v) {
+            ae = parseBoolean(v);
+            url.params.ae = booleanToString(ae);
+        },
+
+        haveFaces: function() { return af !== null; },
+        getFaces: function() { return af; },
+        setFaces: function(v) {
+            af = parseBoolean(v);
+            url.params.af = booleanToString(af);
+        },
+
+        haveAxes: function() { return ac !== null; },
+        getAxes: function() { return ac; },
+        setAxes: function(v) {
+            ac = parseBoolean(v);
+            url.params.ac = booleanToString(ac);
+        },
+
+        haveLattice: function() { return al !== null; },
+        getLattice: function() { return al; },
+        setLattice: function(v) {
+            al = parseBoolean(v);
+            url.params.al = booleanToString(al);
+        },
+
+        haveIJ: function() { return ij !== null; },
+        getIJ: function() { return ij; },
+        setIJ: function(v) {
+            ij = [v[0],v[1]];
+            url.params.ij = intArrayToString(ij);
+        }
+
+
+    };
+}
 
 $(document).ready(function() {
     var $canvas = $('#thecanvas');
