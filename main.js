@@ -112,6 +112,19 @@ function parseIInt(str) {
 
 function intToString(a) { return sprintf("%1d", a); }
 
+function parseDragMode(str) {
+console.log("at a");
+console.log(str);
+    if (str === "t") { return "translate"; }
+    return "rotate";
+}
+
+function dragModeToString(m) {
+console.log("at b");
+    if (m === "translate") { return "t"; }
+    return "r";
+}
+
 wviz.setEdges = function(v) {
     wviz.edges.visible = v;
 };
@@ -125,7 +138,9 @@ wviz.setLattice = function(v) {
     wviz.lattice.visible = v;
 };
 wviz.setIJ = function(ij) {
-    wviz.drop.moveToIJ(ij[0], ij[1]);
+    if (ij) {
+        wviz.drop.moveToIJ(ij[0], ij[1]);
+    }
 };
 
 wviz.setLineWidth = function(a) {
@@ -237,7 +252,7 @@ var commands = [
             urlKey: "c",
             default: null,
             parse: parseFloatArray,
-            toString: floatArrayToString,
+            toString :floatArrayToString,
             setState: function(c) { wviz.setCenter(c); } // using anon fn because wviz.setCenter not defined til later
         }
     },
@@ -262,6 +277,52 @@ var commands = [
             setState: wviz.setLineWidth
         }
     },
+
+    {
+        seq: "t",
+        action: function() {
+            wviz.mouseDragMode = "translate";
+console.log('at 1');
+            wviz.permalink.set("dragMode", "translate");
+console.log('at 2');
+            wviz.updatePermalink();
+        },
+        msgfunc: function() { return "translate"; },
+        permalink: {
+            key: "dragMode",
+            urlKey: "dm",
+            default: null,
+            parse: parseDragMode,
+            toString: dragModeToString,
+            setSet: function(m) {
+                wviz.mouseDragMode = m;
+            }
+        }
+    },
+    {
+        seq: "r",
+        action: function() {
+            wviz.mouseDragMode = "rotate";
+            wviz.permalink.set("dragMode", "rotate");
+            wviz.updatePermalink();
+        },
+        msgfunc: function() { return "rotate"; },
+        permalink: {
+            key: "dragMode",
+            urlKey: "dm",
+            default: null,
+            parse: parseDragMode,
+            toString: dragModeToString,
+            setSet: function(m) {
+                wviz.mouseDragMode = m;
+            }
+        }
+    },
+
+
+//    { seq: "r",
+//      action: rotateMode,
+//      msgfunc: function() { return "rotate"; } },
 
     { seq: "fs",
       action: setFallSpeed,
@@ -289,21 +350,8 @@ var commands = [
       msgfunc: function() { return "begin rain"; } },
     { seq: "er",
       action: function() { rain.endRain(state, wviz.requestRender); },
-      msgfunc: function() { return "end rain"; } },
-    { seq: "t",
-      action: translateMode,
-      msgfunc: function() { return "translate"; } },
-    { seq: "r",
-      action: rotateMode,
-      msgfunc: function() { return "rotate"; } }
+      msgfunc: function() { return "end rain"; } }
 ];
-
-function translateMode() {
-    wviz.mouseDragMode = "translate";
-}
-function rotateMode() {
-    wviz.mouseDragMode = "rotate";
-}
 
 function setFallSpeed(n) {
     wviz.settings.drop.fallSpeed = n;
@@ -779,10 +827,6 @@ function launch(canvas, width, height) {
             wviz.updatePermalink = function() {
                 window.history.replaceState({}, "", wviz.permalink.toString());
             };
-            //if (wviz.permalink.haveCenter()) {
-//                //wviz.setCenter(wviz.permalink.getCenter());
-//                wviz.setCenter(wviz.permalink.get("center"));
-//            }
             wviz.requestRender();
         });
 
@@ -824,11 +868,15 @@ function launch(canvas, width, height) {
     var frame  = camera;
 
     wviz.setMM = function(m) {
-        moving.matrix.copy(m);
-        moving.matrixWorldNeedsUpdate = true;
+        if (m) {
+            moving.matrix.copy(m);
+            moving.matrixWorldNeedsUpdate = true;
+        }
     };
     wviz.setCenter = function(c) {
-        center.position.set(c[0], c[1], c[2]);
+        if (c) {
+            center.position.set(c[0], c[1], c[2]);
+        }
     };
 
     var kp = kbd_processor(commands,
