@@ -41,29 +41,196 @@ wviz.settings = {
 };
 
 
-var state = {
-    mouseWheelMode: "scale",
-    mouseDragMode: "rotate"
+wviz.mouseWheelMode =  "scale";
+wviz.mouseDragMode = "rotate";
+
+window.wviz = wviz;
+
+function parseMatrix4(str) {
+    if (typeof(str) === "string") {
+        var m = new THREE.Matrix4();
+        var e = str.split(/,/).map(function(s) { return parseFloat(s); });
+        m.set(e[0], e[1], e[2], e[3],
+              e[4], e[5], e[6], e[7],
+              e[8], e[9], e[10], e[11],
+              e[12], e[13], e[14], e[15]);
+        return m;
+    } else {
+        return str;
+    }
+}
+
+function matrix4ToString(m) {
+    var e = m.elements;
+    return sprintf("%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f",
+                   e[0],e[4],e[ 8],e[12],
+                   e[1],e[5],e[ 9],e[13],
+                   e[2],e[6],e[10],e[14],
+                   e[3],e[7],e[11],e[15]);
+}
+
+function parseBoolean(v) {
+    return (v !== false
+            &&
+            v !== "0"
+            &&
+            v !== 0);
+}
+
+function booleanToString(v) {
+    return v ? "1" : "0";
+}
+
+function parseFloatArray(str) {
+    if (typeof(str) === "string") {
+        return str.split(/,/).map(function(s) { return parseFloat(s); });
+    } else {
+        return str;
+    }
+}
+
+function floatArrayToString(a) {
+    return a.map(function(x) { return sprintf("%.4f", x); }).join(",");
+}
+
+function parseIntArray(str) {
+    if (typeof(str) === "string") {
+        return str.split(/,/).map(function(s) { return parseInt(s,10); });
+    } else {
+        return str;
+    }
+}
+
+function intArrayToString(a) {
+    return a.map(function(x) { return sprintf("%1d", x); }).join(",");
+}
+
+wviz.setEdges = function(v) {
+    wviz.edges.visible = v;
+};
+wviz.setFaces = function(v) {
+    wviz.faces.visible = v;
+};
+wviz.setAxes = function(v) {
+    wviz.axes.visible = v;
+};
+wviz.setLattice = function(v) {
+    wviz.lattice.visible = v;
+};
+wviz.setIJ = function(ij) {
+    wviz.drop.moveToIJ(ij[0], ij[1]);
 };
 
-window.state = state;
-
 var commands = [
-    { seq: "ae",
-      action: toggleEdges,
-      msgfunc: function() { return "edges " + (state.edges.visible ? "on" : "off"); } },
-    { seq: "af",
-      action: toggleFaces,
-      msgfunc: function() { return "faces " + (state.faces.visible ? "on" : "off"); } },
+    {
+        seq: "ae",
+        action: function toggleEdges() {
+            wviz.setEdges(!wviz.edges.visible);
+            wviz.permalink.set("edges", wviz.edges.visible);
+            wviz.updatePermalink();
+            wviz.requestRender();
+        },
+        msgfunc: function() { return "edges " + (wviz.edges.visible ? "on" : "off"); },
+        permalink: {
+            key: "edges",
+            urlKey: "ae",
+            default: null,
+            parse: parseBoolean,
+            toString: booleanToString,
+            setState: wviz.setEdges
+        }
+    },
+    {
+        seq: "af",
+        action: function toggleFaces() {
+            wviz.setFaces(!wviz.faces.visible);
+            wviz.permalink.set("faces", wviz.faces.visible);
+            wviz.updatePermalink();
+            wviz.requestRender();
+        },
+        msgfunc: function() { return "faces " + (wviz.faces.visible ? "on" : "off"); },
+        permalink: {
+            key: "faces",
+            urlKey: "af",
+            default: null,
+            parse: parseBoolean,
+            toString: booleanToString,
+            setState: wviz.setFaces
+        }
+    },
+    {
+        seq: "ac",
+        action: function toggleAxes() {
+            wviz.setAxes(!wviz.axes.visible);
+            wviz.permalink.set("axes", wviz.axes.visible);
+            wviz.updatePermalink();
+            wviz.requestRender();
+        },
+        msgfunc: function() { return "axes " + (wviz.axes.visible ? "on" : "off"); },
+        permalink: {
+            key: "axes",
+            urlKey: "ac",
+            default: null,
+            parse: parseBoolean,
+            toString: booleanToString,
+            setState: wviz.setAxes
+        }
+    },
+    {
+        seq: "al",
+        action: function toggleLattice() {
+            wviz.setLattice(!wviz.lattice.visible);
+            wviz.permalink.set("lattice", wviz.lattice.visible);
+            wviz.updatePermalink();
+            wviz.requestRender();
+        },
+        msgfunc: function() { return "lattice " + (wviz.lattice.visible ? "on" : "off"); },
+        permalink: {
+            key: "lattice",
+            urlKey: "al",
+            default: null,
+            parse: parseBoolean,
+            toString: booleanToString,
+            setState: wviz.setLattice
+        }
+    },
+    {
+        //seq: undefined // no kbd seq for this one
+        permalink: {
+            key: "ij",
+            urlKey: "ij",
+            default: null,
+            parse: parseIntArray,
+            toString: intArrayToString,
+            setState: wviz.setIJ
+        }
+    },
+    {
+        //seq: undefined // no kbd seq for this one
+        permalink: {
+            key: "mm",
+            urlKey: "mm",
+            default: null,
+            parse: parseMatrix4,
+            toString: matrix4ToString,
+            setState: function(m) { wviz.setMM(m); } // using anon fn because wviz.setMM not defined til later
+        }
+    },
+    {
+        //seq: undefined // no kbd seq for this one
+        permalink: {
+            key: "center",
+            urlKey: "c",
+            default: null,
+            parse: parseFloatArray,
+            toString: floatArrayToString,
+            setState: function(c) { wviz.setCenter(c); } // using anon fn because wviz.setCenter not defined til later
+        }
+    },
+
     { seq: "aw",
       action: lineWidth,
       msgfunc: function() { return "line width"; } },
-    { seq: "ac",
-      action: toggleAxes,
-      msgfunc: function() { return "axes " + (state.axes.visible ? "on" : "off"); } },
-    { seq: "al",
-      action: toggleLattice,
-      msgfunc: function() { return "lattice " + (state.lattice.visible ? "on" : "off"); } },
     { seq: "fs",
       action: setFallSpeed,
       msgfunc: function(n) { return sprintf("speed set to %1d", n); } },
@@ -86,10 +253,10 @@ var commands = [
       action: toggleDropScale,
       msgfunc: function() { return "toggle drop scale"; } },
     { seq: "br",
-      action: function() { rain.beginRain(wviz.settings, state, wviz.settings.drop.fallSpeed, requestRender); },
+      action: function() { rain.beginRain(wviz.settings, state, wviz.settings.drop.fallSpeed, wviz.requestRender); },
       msgfunc: function() { return "begin rain"; } },
     { seq: "er",
-      action: function() { rain.endRain(state, requestRender); },
+      action: function() { rain.endRain(state, wviz.requestRender); },
       msgfunc: function() { return "end rain"; } },
     { seq: "t",
       action: translateMode,
@@ -99,69 +266,23 @@ var commands = [
       msgfunc: function() { return "rotate"; } }
 ];
 
-var requestRender;
-
 function lineWidth(a) {
     if (a) {
-        state.edges.material.linewidth = a;
-        state.lattice.material.linewidth = a;
-        requestRender();
+        wviz.edges.material.linewidth = a;
+        wviz.lattice.material.linewidth = a;
+        wviz.requestRender();
     }
-    //console.log(state.edges);
 }
 
 function translateMode() {
-    state.mouseDragMode = "translate";
+    wviz.mouseDragMode = "translate";
 }
 function rotateMode() {
-    state.mouseDragMode = "rotate";
+    wviz.mouseDragMode = "rotate";
 }
 
 function setFallSpeed(n) {
     wviz.settings.drop.fallSpeed = n;
-}
-
-wviz.setEdges = function(v) {
-    state.edges.visible = v;
-};
-wviz.setFaces = function(v) {
-    state.faces.visible = v;
-};
-wviz.setAxes = function(v) {
-    state.axes.visible = v;
-};
-wviz.setLattice = function(v) {
-    state.lattice.visible = v;
-};
-wviz.setIJ = function(ij) {
-    state.drop.moveToIJ(ij[0], ij[1]);
-};
-
-function toggleEdges() {
-    wviz.setEdges(!state.edges.visible);
-    wviz.permalink.setEdges(state.edges.visible);
-    wviz.updatePermalink();
-    requestRender();
-}
-
-function toggleFaces() {
-    wviz.setFaces(!state.faces.visible);
-    wviz.permalink.setFaces(state.faces.visible);
-    wviz.updatePermalink();
-    requestRender();
-}
-
-function toggleAxes() {
-    wviz.setAxes(!state.axes.visible);
-    wviz.permalink.setAxes(state.axes.visible);
-    wviz.updatePermalink();
-    requestRender();
-}
-function toggleLattice() {
-    wviz.setLattice(!state.lattice.visible);
-    wviz.permalink.setLattice(state.lattice.visible);
-    wviz.updatePermalink();
-    requestRender();
 }
 
 function makeDrop(m) {
@@ -201,14 +322,16 @@ function makeDrop(m) {
             var x = xy[0];
             var y = xy[1];
             var z = m.meshData[j][i]+wviz.settings.drop.radius;
-            state.drop.ij = [i,j];
+            wviz.drop.ij = [i,j];
             this.ij = [i,j];
             spherePositionObj.visible = true;
             spherePositionObj.position.set(x,y,z);
             circlePositionObj.visible = true;
             circlePositionObj.position.set(x,y,wviz.settings.terrain.latticeZ);
-            wviz.permalink.setIJ([i,j]);
-            wviz.updatePermalink();
+            if (wviz.permalink) {
+                wviz.permalink.set("ij", [i,j]);
+                wviz.updatePermalink();
+            }
         },
         moveDropToXYZ: function (x,y,z) {
             spherePositionObj.visible = true;
@@ -222,47 +345,28 @@ function makeDrop(m) {
         }
 
     };
-    //        var circleMesh = new THREE.Mesh( new THREE.CircleGeometry( wviz.settings.drop.radius, 8 ), surfaceMaterial );
-    //        var projMat = new THREE.Matrix4();
-    //        projMat.set(1,0,0,0,
-    //                    0,1,0,0,
-    //                    0,0,0,wviz.settings.terrain.latticeZ,
-    //                    0,0,0,1);
-    //        var circleProjObj = new THREE.Object3D();
-    //        circleProjObj.matrixAutoUpdate = false;
-    //        circleProjObj.matrix = projMat;
-    //        circleProjObj.add(circleMesh);
-
-    //        //var circleMesh = new THREE.Mesh( new THREE.CircleGeometry( 1, 8 ), new THREE.MeshBasicMaterial( { color: 0x0000ff } ) );
-    //        var circleContainer = new THREE.Object3D();
-    //        container.add(circleContainer);
-    //        circleContainer.add(circleMesh);
-    //
-    //        circleContainer.matrixAutoUpdate = false;
-    //        circleContainer.applyMatrix(p);
-
 }
 
 function advanceOnce(a) {
-    if (state.drop.ij) {
+    if (wviz.drop.ij) {
         if (typeof(a)==="undefined") { a = 1; }
         while (a-- > 0) {
-            var nextIJ = state.m.flow[state.drop.ij[0]][state.drop.ij[1]];
+            var nextIJ = wviz.m.flow[wviz.drop.ij[0]][wviz.drop.ij[1]];
             if (nextIJ) {
-                state.drop.moveToIJ(nextIJ[0], nextIJ[1]);
-                requestRender();
+                wviz.drop.moveToIJ(nextIJ[0], nextIJ[1]);
+                wviz.requestRender();
             }
         }
     }
 }
 
 function advanceAll(a) {
-    if (state.drop.ij) {
+    if (wviz.drop.ij) {
         function oneStep() {
-            var nextIJ = state.m.flow[state.drop.ij[0]][state.drop.ij[1]];
+            var nextIJ = wviz.m.flow[wviz.drop.ij[0]][wviz.drop.ij[1]];
             if (nextIJ) {
-                state.drop.moveToIJ(nextIJ[0], nextIJ[1]);
-                requestRender(function() {
+                wviz.drop.moveToIJ(nextIJ[0], nextIJ[1]);
+                wviz.requestRender(function() {
                     setTimeout(oneStep, wviz.settings.drop.fallSpeed);
                 });
             }
@@ -272,43 +376,43 @@ function advanceAll(a) {
 }
 
 function toggleNeighbors() {
-    if (state.neighbors) {
-        state.world.remove(state.neighbors);
-        state.neighbors = null;
+    if (wviz.neighbors) {
+        wviz.world.remove(wviz.neighbors);
+        wviz.neighbors = null;
     } else {
-        state.neighbors = makeNeighborPoints();
-        state.world.add(state.neighbors);
+        wviz.neighbors = makeNeighborPoints();
+        wviz.world.add(wviz.neighbors);
     }
-    requestRender();
+    wviz.requestRender();
 }
 
 function toggleHeightLines() {
-    if (state.heightLines) {
-        state.world.remove(state.heightLines);
-        state.heightLines = null;
+    if (wviz.heightLines) {
+        wviz.world.remove(wviz.heightLines);
+        wviz.heightLines = null;
     } else {
-        state.heightLines = makeNeighborHeightLines();
-        state.world.add(state.heightLines);
+        wviz.heightLines = makeNeighborHeightLines();
+        wviz.world.add(wviz.heightLines);
     }
-    requestRender();
+    wviz.requestRender();
 }
 
 function toggleText() {
-    if (state.text) {
-        state.world.remove(state.text);
-        state.text = null;
+    if (wviz.text) {
+        wviz.world.remove(wviz.text);
+        wviz.text = null;
     } else {
-        state.text = makeNeighborText();
-        state.world.add(state.text);
+        wviz.text = makeNeighborText();
+        wviz.world.add(wviz.text);
     }
-    requestRender();
+    wviz.requestRender();
 }
 
 function toggleDropScale() {
-    if (state.mouseWheelMode === "scale") {
-        state.mouseWheelMode = "dropScale";
+    if (wviz.mouseWheelMode === "scale") {
+        wviz.mouseWheelMode = "dropScale";
     } else {
-        state.mouseWheelMode = "scale";
+        wviz.mouseWheelMode = "scale";
     }
 }
 
@@ -406,11 +510,11 @@ function neighborIJPoints(ij) {
     for (ii=i-1; ii<=i+1; ++ii) {
         for (jj=j-1; jj<=j+1; ++jj) {
             if ((ii!==i || jj!==j)
-                && ii >= 0 && ii < state.m.N
-                && jj >= 0 && jj < state.m.M) {
+                && ii >= 0 && ii < wviz.m.N
+                && jj >= 0 && jj < wviz.m.M) {
                 points.push([ii,jj]);
-                //var xy = state.m.ij_to_xy([ii,jj]);
-                //points.push([xy[0], xy[1], state.m.meshData[jj][ii]]);
+                //var xy = wviz.m.ij_to_xy([ii,jj]);
+                //points.push([xy[0], xy[1], wviz.m.meshData[jj][ii]]);
             }
         }
     }
@@ -418,7 +522,7 @@ function neighborIJPoints(ij) {
 }
 
 function makeNeighborPoints() {
-    var points = neighborIJPoints(state.drop.ij);
+    var points = neighborIJPoints(wviz.drop.ij);
     if (points === null) { return null; }
 
     var yellowSurfaceMaterial = new THREE.MeshPhongMaterial({
@@ -433,18 +537,18 @@ function makeNeighborPoints() {
     });
     var neighbors = new THREE.Object3D();
     points.forEach(function(point) {
-        var xy = state.m.ij_to_xy(point);
-        var next = state.m.flow[state.drop.ij[0]][state.drop.ij[1]];
+        var xy = wviz.m.ij_to_xy(point);
+        var next = wviz.m.flow[wviz.drop.ij[0]][wviz.drop.ij[1]];
         var mat = (point[0]===next[0] && point[1]===next[1]) ? blueSurfaceMaterial : yellowSurfaceMaterial;
         var mesh = new THREE.Mesh(new THREE.SphereGeometry( wviz.settings.drop.radius/2, 8, 8 ), mat);
-        mesh.position.set(xy[0], xy[1], state.m.meshData[point[1]][point[0]]);
+        mesh.position.set(xy[0], xy[1], wviz.m.meshData[point[1]][point[0]]);
         neighbors.add( mesh );
     });
     return neighbors;
 }
 
 function makeNeighborHeightLines() {
-    var points = neighborIJPoints(state.drop.ij);
+    var points = neighborIJPoints(wviz.drop.ij);
     if (points === null) { return null; }
 
     var yellowLineMat = new THREE.LineBasicMaterial({
@@ -464,10 +568,10 @@ function makeNeighborHeightLines() {
     lines.add(yellowObj);
     lines.add(blueObj);
     points.forEach(function(point) {
-        var xy = state.m.ij_to_xy(point);
+        var xy = wviz.m.ij_to_xy(point);
         var p0 = new THREE.Vector3(xy[0], xy[1], wviz.settings.terrain.latticeZ);
-        var p1 = new THREE.Vector3(xy[0], xy[1], state.m.meshData[point[1]][point[0]]);
-        var next = state.m.flow[state.drop.ij[0]][state.drop.ij[1]];
+        var p1 = new THREE.Vector3(xy[0], xy[1], wviz.m.meshData[point[1]][point[0]]);
+        var next = wviz.m.flow[wviz.drop.ij[0]][wviz.drop.ij[1]];
         if (point[0]===next[0] && point[1]===next[1]) {
             blueLineGeom.vertices.push(p0, p1);
         } else {
@@ -481,7 +585,7 @@ var fonts = {};
 
 function makeNeighborText() {
 
-    if (!state.drop || !state.drop.ij) { return null; }
+    if (!wviz.drop || !wviz.drop.ij) { return null; }
     var textObj = new THREE.Object3D();
     var mat = new THREE.MeshPhongMaterial( {
         color: 0x000000,
@@ -505,11 +609,11 @@ function makeNeighborText() {
     };
     var i,j;
     var R = 5;
-    for (i=state.drop.ij[0]-R; i<=state.drop.ij[0]+R; ++i) {
-        for (j=state.drop.ij[1]-R; j<=state.drop.ij[1]+R; ++j) {
-            var xy = state.m.ij_to_xy([i,j]);
+    for (i=wviz.drop.ij[0]-R; i<=wviz.drop.ij[0]+R; ++i) {
+        for (j=wviz.drop.ij[1]-R; j<=wviz.drop.ij[1]+R; ++j) {
+            var xy = wviz.m.ij_to_xy([i,j]);
             var oneTextObj = new THREE.Object3D();
-            var textGeom = new THREE.TextGeometry(sprintf("%.3f", state.m.meshData[j][i]),
+            var textGeom = new THREE.TextGeometry(sprintf("%.3f", wviz.m.meshData[j][i]),
                                                   textOptions);
             var textMesh = new THREE.Mesh(textGeom, mat);
             oneTextObj.add(textMesh);
@@ -519,13 +623,6 @@ function makeNeighborText() {
             textObj.add(oneTextObj);
         }
     }
-
-    /*
-    var textGeom = new THREE.TextGeometry("3.14152", textOptions);
-    var textMesh = new THREE.Mesh(textGeom, mat);
-    var textObj = new THREE.Object3D();
-    textObj.add(textMesh);
-*/
     return textObj;
 }
 
@@ -537,15 +634,15 @@ function lowPoints() {
     var i, j;
     var points = [];
     var segsGeom = new THREE.Geometry();
-    for (i=0; i<state.m.N; ++i) {
-        for (j=0; j<state.m.M; ++j) {
-            var next = state.m.flow[i][j];
+    for (i=0; i<wviz.m.N; ++i) {
+        for (j=0; j<wviz.m.M; ++j) {
+            var next = wviz.m.flow[i][j];
             if (next != null && latticeDistance([i,j],next) > 1) {
-                var xy = state.m.ij_to_xy([i,j]);
-                points.push([xy[0], xy[1], state.m.meshData[j][i]]);
-                segsGeom.vertices.push(new THREE.Vector3(xy[0], xy[1], state.m.meshData[j][i]));
-                var nxy = state.m.ij_to_xy(next);
-                segsGeom.vertices.push(new THREE.Vector3(nxy[0], nxy[1], state.m.meshData[next[1]][next[0]]));
+                var xy = wviz.m.ij_to_xy([i,j]);
+                points.push([xy[0], xy[1], wviz.m.meshData[j][i]]);
+                segsGeom.vertices.push(new THREE.Vector3(xy[0], xy[1], wviz.m.meshData[j][i]));
+                var nxy = wviz.m.ij_to_xy(next);
+                segsGeom.vertices.push(new THREE.Vector3(nxy[0], nxy[1], wviz.m.meshData[next[1]][next[0]]));
             }
         }
     }
@@ -560,7 +657,6 @@ function lowPoints() {
         linewidth: 2
     });
     console.log(sprintf("1 #lowpoints = %1d", points.length));
-    //state.m.flow2();
     points.forEach(function(point) {
         var mesh = new THREE.Mesh(new THREE.SphereGeometry( wviz.settings.drop.radius/2, 8, 8 ), redSurfaceMaterial);
         mesh.position.set(point[0], point[1], point[2]);
@@ -577,11 +673,10 @@ function lowPoints2() {
         side: THREE.DoubleSide,
         shading: THREE.SmoothShading
     });
-    console.log(state.m);
-    state.m.lowPoints.forEach(function(ij) {
-        var xy = state.m.ij_to_xy([ij[0], ij[1]]);
+    wviz.m.lowPoints.forEach(function(ij) {
+        var xy = wviz.m.ij_to_xy([ij[0], ij[1]]);
         var mesh = new THREE.Mesh(new THREE.SphereGeometry( wviz.settings.drop.radius/2, 8, 8 ), redSurfaceMaterial);
-        mesh.position.set(xy[0], xy[1], state.m.meshData[ij[1]][ij[0]]);
+        mesh.position.set(xy[0], xy[1], wviz.m.meshData[ij[1]][ij[0]]);
         lows.add( mesh );
     });
     return lows;
@@ -597,17 +692,17 @@ function launch(canvas, width, height) {
 
     var camera = createCamera(width, height);
     var world = new THREE.Object3D();
-    state.world = world;
+    wviz.world = world;
     var zNudgedEdges = new THREE.Object3D();
     world.matrixAutoUpdate = false;
     zNudgedEdges.matrixAutoUpdate = false;
     world.add(zNudgedEdges);
-    state.axes = axes3D({
+    wviz.axes = axes3D({
         length: 0.75,
         tipRadius: 0.05,
         tipHeight: 0.3
     });
-    world.add(state.axes);
+    world.add(wviz.axes);
     var scene = new THREE.Scene();
     var worldContainer = new THREE.Object3D();
     worldContainer.add( world );
@@ -628,7 +723,7 @@ function launch(canvas, width, height) {
         renderer.render( scene, camera );
     };
 
-    requestRender = function(f) {
+    wviz.requestRender = function(f) {
         // optional arg f is a function that will be called immediately after rendering happens
         if (typeof(f)==='function') {
             requestAnimationFrame( function() {
@@ -645,114 +740,30 @@ function launch(canvas, width, height) {
     loader.load( './libs/threejs/fonts/optimer_regular.typeface.json', function ( font ) {
         fonts.optimer = font;
         //world.add( makeNeighborText() );
-        //requestRender();
+        //wviz.requestRender();
         terrain.load('./data/dem3.mesh', wviz.settings, function(t) {
-            state.m = t.m;
-            state.faces = t.faces;
+            wviz.m = t.m;
+            wviz.faces = t.faces;
             world.add(t.faces);
             zNudgedEdges.add(t.edges);
-            state.edges = t.edges;
+            wviz.edges = t.edges;
             world.add(t.lattice);
-            state.lattice = t.lattice;
-            //var lows = lowPoints2();
-            //world.add(lows);
-            state.drop = makeDrop(state.m);
-            world.add( state.drop.tobj );
-
-            wviz.permalink = Permalink(URL({url: window.location.toString()}));
+            wviz.lattice = t.lattice;
+            wviz.drop = makeDrop(wviz.m);
+            world.add( wviz.drop.tobj );
+            wviz.permalink = Permalink(URL({url: window.location.toString()}), commands);
             wviz.updatePermalink = function() {
                 window.history.replaceState({}, "", wviz.permalink.toString());
             };
-            if (wviz.permalink.haveMM()) {
-                wviz.setMM(wviz.permalink.getMM());
-            }
-            if (wviz.permalink.haveCenter()) {
-                wviz.setCenter(wviz.permalink.getCenter());
-            }
-            if (wviz.permalink.haveEdges()) {
-                wviz.setEdges(wviz.permalink.getEdges());
-            }
-            if (wviz.permalink.haveFaces()) {
-                wviz.setFaces(wviz.permalink.getFaces());
-            }
-            if (wviz.permalink.haveAxes()) {
-                wviz.setAxes(wviz.permalink.getAxes());
-            }
-            if (wviz.permalink.haveLattice()) {
-                wviz.setLattice(wviz.permalink.getLattice());
-            }
-            if (wviz.permalink.haveIJ()) {
-                wviz.setIJ(wviz.permalink.getIJ());
-            }
-            //wviz.permalink.setZoom(wviz.map.getZoom());
-            //window.history.replaceState({}, "", wviz.permalink.toString());
-
-            requestRender();
+            //if (wviz.permalink.haveCenter()) {
+//                //wviz.setCenter(wviz.permalink.getCenter());
+//                wviz.setCenter(wviz.permalink.get("center"));
+//            }
+            wviz.requestRender();
         });
 
     });
 
-/*
-*/
-
-
-
-//     function makeDrop() {
-//         //var geometry = new THREE.SphereGeometry( wviz.settings.drop.radius, 16, 16 );
-//         var geometry = new THREE.SphereGeometry( 1, 16, 16 );
-//         var surfaceMaterial = new THREE.MeshPhongMaterial({
-//             color: 0x3333ff,
-//             side: THREE.DoubleSide,
-//             shading: THREE.SmoothShading
-//         });
-//         var wireMaterial = new THREE.MeshBasicMaterial({
-//             color: 0x000000,
-//             wireframe: true,
-//             wireframeLinewidth: 2
-//         });
-//         var sphere = new THREE.Object3D();
-//         //sphere.visible = false;
-//         sphere.add( new THREE.Mesh( geometry, surfaceMaterial ) );
-//         var container = new THREE.Object3D();
-//         container.add(sphere);
-//         container.visible = false;
-// 
-//         container.scale.set(wviz.settings.drop.radius,
-//                             wviz.settings.drop.radius,
-//                             wviz.settings.drop.radius);
-// 
-// 
-//         var p = new THREE.Matrix4();
-//         p.set(1,0,0,0,
-//               0,1,0,0,
-//               0,0,0,wviz.settings.terrain.latticeZ,
-//               0,0,0,1);
-//         //var circleMesh = new THREE.Mesh( new THREE.CircleGeometry( 1, 8 ), new THREE.MeshBasicMaterial( { color: 0x0000ff } ) );
-//         var circleMesh = new THREE.Mesh( new THREE.CircleGeometry( 1, 8 ), surfaceMaterial );
-//         var circleContainer = new THREE.Object3D();
-//         container.add(circleContainer);
-//         circleContainer.add(circleMesh);
-// //debug.showMatrix('0 circleContainer mat', circleContainer.matrix);
-//         circleContainer.matrixAutoUpdate = false;
-//         circleContainer.applyMatrix(p);
-// //debug.showMatrix('1 circleContainer mat', circleContainer.matrix);
-// 
-//         return container;
-//     }
-
-
-
-
-
-
-/*
-    (function() {
-        var geometry = new THREE.CircleGeometry( 1, 8 );
-        var material = new THREE.MeshBasicMaterial( { color: 0x0000ff } );
-        var circle = new THREE.Mesh( geometry, material );
-        world.add( circle );
-    }());
-*/
 
     var raycaster = new THREE.Raycaster();
 
@@ -765,10 +776,9 @@ function launch(canvas, width, height) {
         var minDist = 999999;
         var minObj = null;
         intersects.forEach(function(iobj) {
-//            if (iobj.object === state.faces) {
-            if (iobj.object === state.faces
+            if (iobj.object === wviz.faces
                 ||
-                iobj.object === state.lattice) {
+                iobj.object === wviz.lattice) {
                 if (iobj.distance < minDist) {
                     minDist = iobj.distance;
                     minObj = iobj;
@@ -786,7 +796,7 @@ function launch(canvas, width, height) {
     }
 
     var moving = world;
-    var center = state.axes;
+    var center = wviz.axes;
     var frame  = camera;
 
     wviz.setMM = function(m) {
@@ -814,7 +824,7 @@ function launch(canvas, width, height) {
             // is reversed (increasing towards the bottom of the screen), we need to negate
             // the y coord here; therefore we use (dp.y, dp.x, 0):
             var v, d, angle, L=null;
-            if (state.mouseDragMode === "rotate") {
+            if (wviz.mouseDragMode === "rotate") {
                 if (button === 0) {
                     v = new THREE.Vector3(dp.y, dp.x, 0).normalize();
                     d = Math.sqrt(dp.x*dp.x + dp.y*dp.y);
@@ -827,16 +837,16 @@ function launch(canvas, width, height) {
                     if (dp.x - dp.y < 0) { angle = -angle; }
                     L = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0,0,1), angle);
                 }
-            } else if (state.mouseDragMode === "translate") {
+            } else if (wviz.mouseDragMode === "translate") {
                 L = new THREE.Matrix4().makeTranslation(dp.x/25, -dp.y/25, 0);
             }
             if (L) {
                 var M = eventTracker.computeTransform(moving,center,frame, L);
                 moving.matrix.multiplyMatrices(moving.matrix, M);
-                wviz.permalink.setMM(moving.matrix);
+                wviz.permalink.set("mm", moving.matrix);
                 wviz.updatePermalink();
                 moving.matrixWorldNeedsUpdate = true;
-                requestRender();
+                wviz.requestRender();
             }
         },
         mouseUp: function(p, t, d, event) {
@@ -844,40 +854,38 @@ function launch(canvas, width, height) {
                 if (event.shiftKey && event.button === 0) {
                     // shift-left-click event
                     pick(p.x, p.y, function(x,y,z) {
-                        var ij = state.m.xy_to_ij([x,y]);
-                        state.drop.moveToIJ(ij[0], ij[1]);
-                        requestRender();
+                        var ij = wviz.m.xy_to_ij([x,y]);
+                        wviz.drop.moveToIJ(ij[0], ij[1]);
+                        wviz.requestRender();
                     });
                 }
                 if (event.ctrlKey && event.button === 0) {
                     // ctrl-left-click event
-                    console.log(sprintf("center at (%f,%f)", p.x, p.y));
-                    //pick(p.x, p.y);
                     pick(p.x, p.y, function(x,y,z) {
                         wviz.setCenter([x,y,z]);
-                        wviz.permalink.setCenter([x,y,z]);
+                        wviz.permalink.set("center", [x,y,z]);
                         wviz.updatePermalink();
-                        requestRender();
+                        wviz.requestRender();
                     });
                 }
             }
         },
         mouseWheel: function(delta) {
             var s;
-            if (state.mouseWheelMode === "scale") {
+            if (wviz.mouseWheelMode === "scale") {
                 s = Math.exp(delta/20.0);
                 var R = new THREE.Matrix4().makeScale(s,s,s);
                 var M = eventTracker.computeTransform(moving,center,frame, R);
                 moving.matrix.multiplyMatrices(moving.matrix, M);
-                wviz.permalink.setMM(moving.matrix);
+                wviz.permalink.set("mm", moving.matrix);
                 wviz.updatePermalink();
                 moving.matrixWorldNeedsUpdate = true;
-                requestRender();
-            } else if (state.mouseWheelMode === "dropScale") {
+                wviz.requestRender();
+            } else if (wviz.mouseWheelMode === "dropScale") {
                 s = Math.exp(delta/20.0);
                 wviz.settings.drop.radius *= s;
-                state.drop.setRadius(wviz.settings.drop.radius);
-                requestRender();
+                wviz.drop.setRadius(wviz.settings.drop.radius);
+                wviz.requestRender();
             }
         },
         keyPress: function(event) {
@@ -911,133 +919,39 @@ function fadeMessage(msg) {
     });
 }
 
-function parseMatrix4(str) {
-    var m = new THREE.Matrix4();
-    var e = str.split(/,/).map(function(s) { return parseFloat(s); });
-    m.set(e[0], e[1], e[2], e[3],
-          e[4], e[5], e[6], e[7],
-          e[8], e[9], e[10], e[11],
-          e[12], e[13], e[14], e[15]);
-    return m;
-}
-
-function matrix4ToString(m) {
-    var e = m.elements;
-    return sprintf("%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f",
-                   e[0],e[4],e[ 8],e[12],
-                   e[1],e[5],e[ 9],e[13],
-                   e[2],e[6],e[10],e[14],
-                   e[3],e[7],e[11],e[15]);
-}
-
-function parseFloatArray(str) {
-    return str.split(/,/).map(function(s) { return parseFloat(s); });
-}
-
-function floatArrayToString(a) {
-    return a.map(function(x) { return sprintf("%.4f", x); }).join(",");
-}
-
-function parseIntArray(str) {
-    return str.split(/,/).map(function(s) { return parseInt(s,10); });
-}
-
-function intArrayToString(a) {
-    return a.map(function(x) { return sprintf("%1d", x); }).join(",");
-}
-
-function parseBoolean(v) {
-    return (v !== false
-            &&
-            v !== "0"
-            &&
-            v !== 0);
-}
-
-function booleanToString(v) {
-    return v ? "1" : "0";
-}
-
 // A utility object for constructing and extracting information from the
 // application URL:
-function Permalink(url) {
-    var mm = null, c = null, ae = null, af = null, ac = null, al = null, ij = null;
-    if ('mm' in url.params) {
-        mm = parseMatrix4(url.params.mm);
-    }
-    if ('c' in url.params) {
-        c = parseFloatArray(url.params.c);
-    }
-    if ('ae' in url.params) {
-        ae = parseBoolean(url.params.ae);
-    }
-    if ('af' in url.params) {
-        af = parseBoolean(url.params.af);
-    }
-    if ('ac' in url.params) {
-        ac = parseBoolean(url.params.ac);
-    }
-    if ('al' in url.params) {
-        al = parseBoolean(url.params.al);
-    }
-    if ('ij' in url.params) {
-        ij = parseIntArray(url.params.ij);
-    }
-    return {
-        toString : function() { return url.toString(); },
-        haveMM: function() { return mm !== null; },
-        getMM: function() { return mm; },
-        setMM: function(m) {
-            if (!mm) { mm = new THREE.Matrix4(); }
-            mm.copy(m);
-            url.params.mm = matrix4ToString(mm);
-        },
-        haveCenter: function() { return c !== null; },
-        getCenter: function() { return c; },
-        setCenter: function(a) {
-            if (c === null) { c = [0,0,0]; }
-            var i;
-            for (i=0; i<3; ++i) { c[i] = a[i]; }
-            url.params.c = floatArrayToString(a);
-        },
-
-        haveEdges: function() { return ae !== null; },
-        getEdges: function() { return ae; },
-        setEdges: function(v) {
-            ae = parseBoolean(v);
-            url.params.ae = booleanToString(ae);
-        },
-
-        haveFaces: function() { return af !== null; },
-        getFaces: function() { return af; },
-        setFaces: function(v) {
-            af = parseBoolean(v);
-            url.params.af = booleanToString(af);
-        },
-
-        haveAxes: function() { return ac !== null; },
-        getAxes: function() { return ac; },
-        setAxes: function(v) {
-            ac = parseBoolean(v);
-            url.params.ac = booleanToString(ac);
-        },
-
-        haveLattice: function() { return al !== null; },
-        getLattice: function() { return al; },
-        setLattice: function(v) {
-            al = parseBoolean(v);
-            url.params.al = booleanToString(al);
-        },
-
-        haveIJ: function() { return ij !== null; },
-        getIJ: function() { return ij; },
-        setIJ: function(v) {
-            ij = [v[0],v[1]];
-            url.params.ij = intArrayToString(ij);
-        }
-
-
+function Permalink(url, commands) {
+    var pl = {
+        toString : function() { return url.toString(); }
     };
+    var vals = {};
+    pl.have = function(k) {
+        return (k in vals && vals[k].key !== vals[k].default);
+    };
+    pl.get = function(k) {
+        if (!(k in vals)) { return undefined; }
+        return vals[k].val;
+    };
+    pl.set = function(k,v) {
+        vals[k].val = vals[k].parse(v);
+        url.params[vals[k].urlKey] = vals[k].toString(vals[k].val);
+    };
+    commands.forEach(function(cmd) {
+        if (cmd.permalink) {
+            vals[cmd.permalink.key] = cmd.permalink;
+            vals[cmd.permalink.key].val = cmd.permalink.default;
+            if (cmd.permalink.urlKey in url.params) {
+                vals[cmd.permalink.key].val = cmd.permalink.parse(url.params[cmd.permalink.urlKey]);
+            }
+            if (cmd.permalink.setState) {
+                if (pl.have(cmd.permalink.key)) {
+                    cmd.permalink.setState(pl.get(cmd.permalink.key));
+                }
+            }
+        }
+    });
+    return pl;
 }
 
 $(document).ready(function() {

@@ -75,7 +75,9 @@ function kbd_processor(commands, progressMsgFunc, actionMsgFunc) {
         }
     };
     commands.forEach(function(cmd) {
-        kp.addCommand(cmd);
+        if ("seq" in cmd) {
+            kp.addCommand(cmd);
+        }
     });
     return kp;
 }
