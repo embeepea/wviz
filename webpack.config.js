@@ -8,7 +8,7 @@ module.exports = {
     ],
     output: {
         path: __dirname,
-        filename: PROD ? 'wviz.min.js' : 'wviz.js'
+        filename: PROD ? 'all.min.js' : 'all.js'
     },
     plugins: PROD ? [
         new webpack.optimize.UglifyJsPlugin({minimize: true})
