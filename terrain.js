@@ -154,12 +154,28 @@ function load(meshURL, settings, callback) {
             var latticeArrowObj = new THREE.Object3D();
             latticeArrowObj.add(new THREE.LineSegments(latticeArrowShaftGeom, latticeLineMat));
             latticeArrowObj.add(new THREE.Mesh(latticeArrowHeadGeom, latticePointMat));
+            
+            var quadGeom = new THREE.Geometry();
+            quadGeom.vertices.push(new THREE.Vector3(m.xMin, m.yMin, zL),
+                                   new THREE.Vector3(m.xMin, m.yMax, zL),
+                                   new THREE.Vector3(m.xMax, m.yMax, zL),
+                                   new THREE.Vector3(m.xMax, m.yMin, zL));
+            quadGeom.faces.push(new THREE.Face3(0,1,2));
+            quadGeom.faces.push(new THREE.Face3(0,2,3));
+            var quadMat = new THREE.MeshBasicMaterial( {
+                color: 0xff0000,
+                opacity: 0,
+                transparent: true,
+                side: THREE.DoubleSide
+            });
+            var quadMesh = new THREE.Mesh(quadGeom, quadMat);
             callback({
                 faces: new THREE.Mesh( geom, terrainMat ),
                 edges: new THREE.LineSegments(edgeGeom, edgeMat),
                 latticeArrows: latticeArrowObj,
                 //lattice: new THREE.LineSegments(latticeLineGeom, latticeLineMat),
                 lattice: new THREE.Mesh(latticePointGeom, latticePointMat),
+                latticeQuad: quadMesh,
                 m: m
             });
         }

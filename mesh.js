@@ -336,16 +336,6 @@ function parseMesh(meshString) {
         var cNodes = cycleNodes(m);
         console.log(sprintf("mesh flow has %1d cycles", cNodes.length));
     }
-/*
-    var cNodes = cycleNodes(m);
-    cNodes.forEach(function(ij) {
-        m.meshData[ij[1]][ij[0]] += 0.001;
-    });
-    flowMesh2(m);
-    cNodes = cycleNodes(m);
-    console.log(cNodes);
-    //flowMesh(m);
-*/
     return m;
 }
 

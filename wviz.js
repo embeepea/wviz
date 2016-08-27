@@ -551,6 +551,10 @@ wviz.launch = function(canvas, width, height, commands) {
             world.add(t.latticeArrows);
             wviz.latticeArrows = t.latticeArrows;
             wviz.latticeArrows.visible = false;
+
+            world.add(t.latticeQuad);
+            wviz.latticeQuad = t.latticeQuad;
+
             wviz.drop = makeDrop(wviz.m);
             world.add( wviz.drop.tobj );
             wviz.emit({type: "launched"});
@@ -573,7 +577,7 @@ wviz.launch = function(canvas, width, height, commands) {
         intersects.forEach(function(iobj) {
             if (iobj.object === wviz.faces
                 ||
-                iobj.object === wviz.lattice) {
+                iobj.object === wviz.latticeQuad) {
                 if (iobj.distance < minDist) {
                     minDist = iobj.distance;
                     minObj = iobj;
@@ -588,7 +592,7 @@ wviz.launch = function(canvas, width, height, commands) {
             p.applyMatrix4(TwInv);
             callback(p.x/p.w, p.y/p.w, p.z/p.w);
         }
-    }
+    };
 
 };
 
