@@ -376,10 +376,8 @@ function makeNeighborText() {
 
     if (!wviz.drop || !wviz.drop.ij) { return null; }
     var textObj = new THREE.Object3D();
-    var mat = new THREE.MeshPhongMaterial( {
-        color: 0x000000,
-        side: THREE.DoubleSide,
-        shading: THREE.SmoothShading
+    var mat = new THREE.MeshBasicMaterial( {
+        color: 0x000000
     });
     var textOptions = {
         // font — THREE.Font.
