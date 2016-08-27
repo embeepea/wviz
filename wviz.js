@@ -164,15 +164,18 @@ wviz.advanceAll = function(a) {
     }
 }
 
-wviz.toggleNeighbors = function() {
+wviz.showNeighbors = function() {
+    wviz.hideNeighbors();
+    wviz.neighbors = makeNeighborPoints();
+    wviz.world.add(wviz.neighbors);
+    wviz.requestRender();
+};
+
+wviz.hideNeighbors = function() {
     if (wviz.neighbors) {
         wviz.world.remove(wviz.neighbors);
-        wviz.neighbors = null;
-    } else {
-        wviz.neighbors = makeNeighborPoints();
-        wviz.world.add(wviz.neighbors);
     }
-    wviz.requestRender();
+    wviz.neighbors = null;
 };
 
 wviz.toggleHeightLines = function() {

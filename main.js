@@ -92,7 +92,7 @@ function dragModeToString(m) {
 var commands = [
     {
         seq: "ae",
-        action: function toggleEdges() {
+        action: function() {
             wviz.setEdges(!wviz.edges.visible);
             permalink.set("edges", wviz.edges.visible);
             updatePermalink();
@@ -110,7 +110,7 @@ var commands = [
     },
     {
         seq: "af",
-        action: function toggleFaces() {
+        action: function() {
             wviz.setFaces(!wviz.faces.visible);
             permalink.set("faces", wviz.faces.visible);
             updatePermalink();
@@ -128,7 +128,7 @@ var commands = [
     },
     {
         seq: "ac",
-        action: function toggleAxes() {
+        action: function() {
             wviz.setAxes(!wviz.axes.visible);
             permalink.set("axes", wviz.axes.visible);
             updatePermalink();
@@ -146,7 +146,7 @@ var commands = [
     },
     {
         seq: "al",
-        action: function toggleLattice() {
+        action: function() {
             wviz.setLattice(!wviz.lattice.visible);
             permalink.set("lattice", wviz.lattice.visible);
             updatePermalink();
@@ -288,15 +288,31 @@ var commands = [
       }
     },
 
-    { seq: " ",
-      action: wviz.advanceOnce,
-      msgfunc: function() { return "advance once"; } },
-    { seq: ".",
-      action: wviz.advanceAll,
-      msgfunc: function() { return "advance all"; } },
     { seq: "n",
-      action: wviz.toggleNeighbors,
-      msgfunc: function() { return "toggle neighbor points"; } },
+      action: function() {
+          if (wviz.neighbors) {
+              wviz.hideNeighbors();
+          } else {
+              wviz.showNeighbors();
+          }
+          permalink.set("neighbors", !!wviz.neighbors);
+          updatePermalink();
+      },
+      msgfunc: function() { return "toggle neighbor points"; },
+      permalink: {
+            key: "neighbors",
+            urlKey: "n",
+            default: null,
+            parse: parseBoolean,
+            toString: booleanToString,
+            setState: function(v) {
+                if (v) {
+                    wviz.showNeighbors();
+                }
+            }
+      }
+    },
+
     { seq: "h",
       action: wviz.toggleHeightLines,
       msgfunc: function() { return "toggle height lines"; } },
@@ -306,12 +322,20 @@ var commands = [
     { seq: "ds",
       action: wviz.toggleDropScale,
       msgfunc: function() { return "toggle drop scale"; } },
-    { seq: "br",
-      action: function() { rain.beginRain(wviz.settings, state, wviz.settings.drop.fallSpeed, wviz.requestRender); },
-      msgfunc: function() { return "begin rain"; } },
-    { seq: "er",
-      action: function() { rain.endRain(state, wviz.requestRender); },
-      msgfunc: function() { return "end rain"; } }
+
+    { seq: " ",
+      action: wviz.advanceOnce,
+      msgfunc: function() { return "advance once"; } },
+    { seq: ".",
+      action: wviz.advanceAll,
+      msgfunc: function() { return "advance all"; } },
+
+    //{ seq: "br",
+    //  action: function() { rain.beginRain(wviz.settings, state, wviz.settings.drop.fallSpeed, wviz.requestRender); },
+    //  msgfunc: function() { return "begin rain"; } },
+    //{ seq: "er",
+    //  action: function() { rain.endRain(state, wviz.requestRender); },
+    //  msgfunc: function() { return "end rain"; } },
 ];
 
 // A utility object for constructing and extracting information from the
