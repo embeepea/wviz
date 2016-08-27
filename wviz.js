@@ -116,7 +116,7 @@ function makeDrop(m) {
             spherePositionObj.visible = true;
             spherePositionObj.position.set(x,y,z);
             circlePositionObj.visible = true;
-            circlePositionObj.position.set(x,y,wviz.settings.terrain.latticeZ);
+            circlePositionObj.position.set(x,y,wviz.settings.terrain.latticeZ-0.001);
             wviz.emit({type: "ijset", ij: [i,j]});
         },
         moveDropToXYZ: function (x,y,z) {

@@ -97,7 +97,7 @@ function load(meshURL, settings, callback) {
             });
             geom.computeFaceNormals();
             geom.computeVertexNormals();
-            latticePointGeom.computeFaceNormals();
+            //latticePointGeom.computeFaceNormals();
             //latticePointGeom.computeVertexNormals();
 
             var edgeMat = new THREE.LineBasicMaterial({
@@ -108,12 +108,10 @@ function load(meshURL, settings, callback) {
                 color: settings.terrain.edgeColor,
                 linewidth: settings.terrain.lineWidth
             });
-            var latticePointMat = new THREE.MeshPhongMaterial( {
+            var latticePointMat = new THREE.MeshBasicMaterial( {
                 color: 0x000000,
-                side: THREE.DoubleSide,
-                shading: THREE.FlatShading
+                side: THREE.DoubleSide
             });
-
             callback({
                 faces: new THREE.Mesh( geom, terrainMat ),
                 edges: new THREE.LineSegments(edgeGeom, edgeMat),
