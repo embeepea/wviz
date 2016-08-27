@@ -9,6 +9,7 @@ var kbd_processor = require('./kbd_processor.js');
 var wviz = require('./wviz.js');
 
 var width, height, canvas;
+var permalink = null;
 
 window.debug = require('./debug.js');
 
@@ -79,15 +80,12 @@ function parseIInt(str) {
 function intToString(a) { return sprintf("%1d", a); }
 
 function parseDragMode(str) {
-    console.log("at a");
-    console.log(str);
-    if (str === "t") { return "translate"; }
+    if (str === "t" || str === "translate") { return "translate"; }
     return "rotate";
 }
 
 function dragModeToString(m) {
-    console.log("at b");
-    if (m === "translate") { return "t"; }
+    if (m === "translate" || m === "t") { return "t"; }
     return "r";
 }
 
@@ -96,8 +94,8 @@ var commands = [
         seq: "ae",
         action: function toggleEdges() {
             wviz.setEdges(!wviz.edges.visible);
-            wviz.permalink.set("edges", wviz.edges.visible);
-            wviz.updatePermalink();
+            permalink.set("edges", wviz.edges.visible);
+            updatePermalink();
             wviz.requestRender();
         },
         msgfunc: function() { return "edges " + (wviz.edges.visible ? "on" : "off"); },
@@ -114,8 +112,8 @@ var commands = [
         seq: "af",
         action: function toggleFaces() {
             wviz.setFaces(!wviz.faces.visible);
-            wviz.permalink.set("faces", wviz.faces.visible);
-            wviz.updatePermalink();
+            permalink.set("faces", wviz.faces.visible);
+            updatePermalink();
             wviz.requestRender();
         },
         msgfunc: function() { return "faces " + (wviz.faces.visible ? "on" : "off"); },
@@ -132,8 +130,8 @@ var commands = [
         seq: "ac",
         action: function toggleAxes() {
             wviz.setAxes(!wviz.axes.visible);
-            wviz.permalink.set("axes", wviz.axes.visible);
-            wviz.updatePermalink();
+            permalink.set("axes", wviz.axes.visible);
+            updatePermalink();
             wviz.requestRender();
         },
         msgfunc: function() { return "axes " + (wviz.axes.visible ? "on" : "off"); },
@@ -150,8 +148,8 @@ var commands = [
         seq: "al",
         action: function toggleLattice() {
             wviz.setLattice(!wviz.lattice.visible);
-            wviz.permalink.set("lattice", wviz.lattice.visible);
-            wviz.updatePermalink();
+            permalink.set("lattice", wviz.lattice.visible);
+            updatePermalink();
             wviz.requestRender();
         },
         msgfunc: function() { return "lattice " + (wviz.lattice.visible ? "on" : "off"); },
@@ -214,8 +212,8 @@ var commands = [
         action: function lineWidth(a) {
             if (a) {
                 wviz.setLineWidth(a);
-                wviz.permalink.set("lineWidth", a);
-                wviz.updatePermalink();
+                permalink.set("lineWidth", a);
+                updatePermalink();
                 wviz.requestRender();
             }
         },
@@ -234,10 +232,8 @@ var commands = [
         seq: "t",
         action: function() {
             wviz.mouseDragMode = "translate";
-            console.log('at 1');
-            wviz.permalink.set("dragMode", "translate");
-            console.log('at 2');
-            wviz.updatePermalink();
+            permalink.set("dragMode", "translate");
+            updatePermalink();
         },
         msgfunc: function() { return "translate"; },
         permalink: {
@@ -246,8 +242,8 @@ var commands = [
             default: null,
             parse: parseDragMode,
             toString: dragModeToString,
-            setSet: function(m) {
-                wviz.mouseDragMode = m;
+            setState: function(m) {
+                wviz.mouseDragMode = parseDragMode(m);
             }
         }
     },
@@ -255,8 +251,8 @@ var commands = [
         seq: "r",
         action: function() {
             wviz.mouseDragMode = "rotate";
-            wviz.permalink.set("dragMode", "rotate");
-            wviz.updatePermalink();
+            permalink.set("dragMode", "rotate");
+            updatePermalink();
         },
         msgfunc: function() { return "rotate"; },
         permalink: {
@@ -265,20 +261,33 @@ var commands = [
             default: null,
             parse: parseDragMode,
             toString: dragModeToString,
-            setSet: function(m) {
-                wviz.mouseDragMode = m;
+            setState: function(m) {
+                wviz.mouseDragMode = parseDragMode(m);
             }
         }
     },
 
-
-    //    { seq: "r",
-    //      action: rotateMode,
-    //      msgfunc: function() { return "rotate"; } },
-
     { seq: "fs",
-      action: wviz.setFallSpeed,
-      msgfunc: function(n) { return sprintf("speed set to %1d", n); } },
+      action: function(a) {
+          if (a) {
+              wviz.setFallSpeed(a);
+              permalink.set("fallSpeed", a);
+              updatePermalink();
+          }
+      },
+      msgfunc: function(n) { return sprintf("speed set to %1d", n); },
+      permalink: {
+            key: "fallSpeed",
+            urlKey: "fs",
+            default: null,
+            parse: parseIInt,
+            toString: intToString,
+            setState: function(a) {
+                wviz.setFallSpeed(a);
+            }
+      }
+    },
+
     { seq: " ",
       action: wviz.advanceOnce,
       msgfunc: function() { return "advance once"; } },
@@ -371,7 +380,7 @@ function updatePermalink() {
 
 wviz.addListener("ijset", function(e) {
     if (permalink) {
-        permalink.set("ij", [i,j]);
+        permalink.set("ij", e.ij);
         updatePermalink();
     }
 });
@@ -385,8 +394,6 @@ var kp = kbd_processor(commands,
                            fadeMessage();
                        });
 
-
-var permalink = null;
 
 wviz.addListener("launched", function(e) {
     permalink = Permalink(URL({url: window.location.toString()}), commands);
@@ -433,7 +440,7 @@ wviz.addListener("launched", function(e) {
             if (t < 150) {
                 if (event.shiftKey && event.button === 0) {
                     // shift-left-click event
-                    pick(p.x, p.y, function(x,y,z) {
+                    wviz.pick(p.x, p.y, function(x,y,z) {
                         var ij = wviz.m.xy_to_ij([x,y]);
                         wviz.drop.moveToIJ(ij[0], ij[1]);
                         wviz.requestRender();
@@ -441,7 +448,7 @@ wviz.addListener("launched", function(e) {
                 }
                 if (event.ctrlKey && event.button === 0) {
                     // ctrl-left-click event
-                    pick(p.x, p.y, function(x,y,z) {
+                    wviz.pick(p.x, p.y, function(x,y,z) {
                         wviz.setCenter([x,y,z]);
                         if (permalink) {
                             permalink.set("center", [x,y,z]);

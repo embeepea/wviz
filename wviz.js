@@ -550,7 +550,7 @@ wviz.launch = function(canvas, width, height, commands) {
 
     var raycaster = new THREE.Raycaster();
 
-    function pick(x,y,callback) {
+    wviz.pick = function(x,y,callback) {
         var mouse = new THREE.Vector2();
         mouse.x = ( x / window.innerWidth ) * 2 - 1;
         mouse.y = - ( y / window.innerHeight ) * 2 + 1;
