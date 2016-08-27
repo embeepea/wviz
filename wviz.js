@@ -80,16 +80,20 @@ wviz.setFallSpeed = function(n) {
 
 function makeDrop(m) {
     var geometry = new THREE.SphereGeometry( 1, 16, 16 );
-    var surfaceMaterial = new THREE.MeshPhongMaterial({
+    var sphereDropMat = new THREE.MeshPhongMaterial({
         color: 0x3333ff,
         side: THREE.DoubleSide,
         shading: THREE.SmoothShading
+    });
+    var flatDropMat = new THREE.MeshBasicMaterial({
+        color: 0x3333ff,
+        side: THREE.DoubleSide
     });
     var sphereScaleObj = new THREE.Object3D();
     sphereScaleObj.scale.set(wviz.settings.drop.radius,
                              wviz.settings.drop.radius,
                              wviz.settings.drop.radius);
-    sphereScaleObj.add( new THREE.Mesh( geometry, surfaceMaterial ) );
+    sphereScaleObj.add( new THREE.Mesh( geometry, sphereDropMat ) );
     var spherePositionObj = new THREE.Object3D();
     spherePositionObj.add(sphereScaleObj);
     spherePositionObj.visible = false;
@@ -98,7 +102,7 @@ function makeDrop(m) {
     circleScaleObj.scale.set(wviz.settings.drop.radius,
                              wviz.settings.drop.radius,
                              wviz.settings.drop.radius);
-    circleScaleObj.add( new THREE.Mesh( new THREE.CircleGeometry( 1, 8 ), surfaceMaterial ) );
+    circleScaleObj.add( new THREE.Mesh( new THREE.CircleGeometry( 1, 8 ), flatDropMat ) );
     var circlePositionObj = new THREE.Object3D();
     circlePositionObj.add(circleScaleObj);
     circlePositionObj.visible = false;
