@@ -1,5 +1,6 @@
 var THREE = require('./libs/threejs/three.js');
 var parseMesh = require('./mesh.js');
+var sprintf = require('sprintf');
 
 function load(meshURL, settings, callback) {
     $.ajax({
@@ -46,7 +47,7 @@ function load(meshURL, settings, callback) {
                 }
             }
             var edgeGeom = new THREE.Geometry();
-            var latticeGeom = new THREE.Geometry();
+            var latticeLineGeom = new THREE.Geometry();
             function zOffset(v, dz) {
                 return new THREE.Vector3(v.x, v.y, v.z+dz);
             }
@@ -60,52 +61,64 @@ function load(meshURL, settings, callback) {
                 for (j=1; j<m.M; ++j) {
                     edgeGeom.vertices.push(zOffset(geom.vertices[vindex(i,j-1)], dz),
                                            zOffset(geom.vertices[vindex(i,j)],dz));
-                    latticeGeom.vertices.push(zSet(geom.vertices[vindex(i,j-1)], zL),
-                                              zSet(geom.vertices[vindex(i,j)],zL));
+                    latticeLineGeom.vertices.push(zSet(geom.vertices[vindex(i,j-1)], zL),
+                                                  zSet(geom.vertices[vindex(i,j)],zL));
                 }
             }
             for (i=1; i<m.N; ++i) {
                 for (j=0; j<m.M; ++j) {
                     edgeGeom.vertices.push(zOffset(geom.vertices[vindex(i-1,j)],dz),
                                            zOffset(geom.vertices[vindex(i,j)],dz));
-                    latticeGeom.vertices.push(zSet(geom.vertices[vindex(i-1,j)],zL),
-                                              zSet(geom.vertices[vindex(i,j)],zL));
+                    latticeLineGeom.vertices.push(zSet(geom.vertices[vindex(i-1,j)],zL),
+                                                  zSet(geom.vertices[vindex(i,j)],zL));
                 }
             }
-            /*
-            // lattice diagonals:
-            for (i=1; i<m.N; ++i) {
-                for (j=1; j<m.M; ++j) {
-                    edgeGeom.vertices.push(zOffset(geom.vertices[vindex(i-1,j-1)],dz),
-                                           zOffset(geom.vertices[vindex(i,j)],dz));
-                    edgeGeom.vertices.push(zOffset(geom.vertices[vindex(i,j-1)],dz),
-                                           zOffset(geom.vertices[vindex(i-1,j)],dz));
-                    latticeGeom.vertices.push(zSet(geom.vertices[vindex(i-1,j-1)],zL),
-                                              zSet(geom.vertices[vindex(i,j)],zL));
-                    latticeGeom.vertices.push(zSet(geom.vertices[vindex(i,j-1)],zL),
-                                              zSet(geom.vertices[vindex(i-1,j)],zL));
+
+
+            var latticePointGeom = new THREE.Geometry();
+            var r = 0.01;
+            var k = 0;
+            for (i=0; i<m.N; ++i) {
+                for (j=0; j<m.M; ++j) {
+                    xy = m.ij_to_xy([i,j]);
+                    latticePointGeom.vertices.push(new THREE.Vector3(xy[0]-r, xy[1]-r, zL),
+                                                   new THREE.Vector3(xy[0]-r, xy[1]+r, zL),
+                                                   new THREE.Vector3(xy[0]+r, xy[1]+r, zL),
+                                                   new THREE.Vector3(xy[0]+r, xy[1]-r, zL));
+                    latticePointGeom.faces.push(new THREE.Face3(k, k+1, k+2));
+                    latticePointGeom.faces.push(new THREE.Face3(k+2, k+3, k));
+                    k += 4;
                 }
             }
-             */
-            var material = new THREE.MeshPhongMaterial( {
+            var terrainMat = new THREE.MeshPhongMaterial( {
                 color: settings.terrain.diffuseColor,
                 side: THREE.DoubleSide,
                 shading: THREE.SmoothShading
             });
             geom.computeFaceNormals();
             geom.computeVertexNormals();
+            latticePointGeom.computeFaceNormals();
+            //latticePointGeom.computeVertexNormals();
+
             var edgeMat = new THREE.LineBasicMaterial({
                 color: settings.terrain.edgeColor,
                 linewidth: settings.terrain.lineWidth
             });
-            var latticeMat = new THREE.LineBasicMaterial({
+            var latticeLineMat = new THREE.LineBasicMaterial({
                 color: settings.terrain.edgeColor,
                 linewidth: settings.terrain.lineWidth
             });
+            var latticePointMat = new THREE.MeshPhongMaterial( {
+                color: 0x000000,
+                side: THREE.DoubleSide,
+                shading: THREE.FlatShading
+            });
+
             callback({
-                faces: new THREE.Mesh( geom, material ),
+                faces: new THREE.Mesh( geom, terrainMat ),
                 edges: new THREE.LineSegments(edgeGeom, edgeMat),
-                lattice: new THREE.LineSegments(latticeGeom, latticeMat),
+                //lattice: new THREE.LineSegments(latticeLineGeom, latticeLineMat),
+                lattice: new THREE.Mesh(latticePointGeom, latticePointMat),
                 m: m
             });
         }

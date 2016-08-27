@@ -404,8 +404,8 @@ function makeNeighborText() {
                                                   textOptions);
             var textMesh = new THREE.Mesh(textGeom, mat);
             oneTextObj.add(textMesh);
-            oneTextObj.position.set(xy[0] + textOptions.size/4,
-                                    xy[1] + textOptions.size/4,
+            oneTextObj.position.set(xy[0] + textOptions.size,
+                                    xy[1] + textOptions.size,
                                     wviz.settings.terrain.latticeZ);
             textObj.add(oneTextObj);
         }
