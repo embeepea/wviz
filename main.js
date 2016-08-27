@@ -401,20 +401,36 @@ var commands = [
       }
     },
 
-    { seq: "ds",
+    { seq: "sw",
       action: function() {
-          if (scaleTarget === "drop") {
-              scaleTarget = "world";
-          } else {
-              scaleTarget = "drop";
-          }
-          permalink.set("dropScale", parseScaleTarget(scaleTarget));
+          scaleTarget = "world";
+          permalink.set("scaleTarget", parseScaleTarget(scaleTarget));
           updatePermalink();
       },
-      msgfunc: function() { return "toggle drop scale"; },
+      msgfunc: function() { return "scale world"; },
       permalink: {
-            key: "dropScale",
-            urlKey: "ds",
+            key: "scaleTarget",
+            urlKey: "st",
+            default: null,
+            parse: parseScaleTarget,
+            toString: scaleTargetToString,
+            setState: function(m) {
+                if (m) {
+                    scaleTarget = parseScaleTarget(m);
+                }
+            }
+      }
+    },
+    { seq: "sd",
+      action: function() {
+          scaleTarget = "drop";
+          permalink.set("scaleTarget", parseScaleTarget(scaleTarget));
+          updatePermalink();
+      },
+      msgfunc: function() { return "scale drop"; },
+      permalink: {
+            key: "scaleTarget",
+            urlKey: "st",
             default: null,
             parse: parseScaleTarget,
             toString: scaleTargetToString,
@@ -441,6 +457,7 @@ var commands = [
     //{ seq: "er",
     //  action: function() { rain.endRain(state, wviz.requestRender); },
     //  msgfunc: function() { return "end rain"; } },
+
 ];
 
 // A utility object for constructing and extracting information from the
