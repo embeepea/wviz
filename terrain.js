@@ -1,6 +1,7 @@
 var THREE = require('./libs/threejs/three.js');
 var parseMesh = require('./mesh.js');
 var sprintf = require('sprintf');
+var arrow = require('./arrow.js');
 
 function load(meshURL, settings, callback) {
     $.ajax({
@@ -8,7 +9,6 @@ function load(meshURL, settings, callback) {
         dataType: 'text',
         success: function(data,status) {
             var m = parseMesh(data);
-
             var geom = new THREE.Geometry();
             var i, j, xy;
             for (i=0; i<m.N; ++i) {
@@ -74,6 +74,20 @@ function load(meshURL, settings, callback) {
                 }
             }
 
+            function addCircle(geom,x,y,r,n,z) {
+                var a = Math.PI/4;
+                var da = 2*Math.PI/n;
+                var ps = [];
+                var i;
+                var k = geom.vertices.length;
+                for (i=0; i<n; ++i) {
+                    geom.vertices.push(new THREE.Vector3(x+r*Math.cos(a),y+r*Math.sin(a),z));
+                    a += da;
+                }
+                for (i=0; i<n-2; ++i) {
+                    geom.faces.push(new THREE.Face3(k, k+i+1, k+i+2));
+                }
+            }
 
             var latticePointGeom = new THREE.Geometry();
             var r = 0.01;
@@ -81,13 +95,7 @@ function load(meshURL, settings, callback) {
             for (i=0; i<m.N; ++i) {
                 for (j=0; j<m.M; ++j) {
                     xy = m.ij_to_xy([i,j]);
-                    latticePointGeom.vertices.push(new THREE.Vector3(xy[0]-r, xy[1]-r, zL),
-                                                   new THREE.Vector3(xy[0]-r, xy[1]+r, zL),
-                                                   new THREE.Vector3(xy[0]+r, xy[1]+r, zL),
-                                                   new THREE.Vector3(xy[0]+r, xy[1]-r, zL));
-                    latticePointGeom.faces.push(new THREE.Face3(k, k+1, k+2));
-                    latticePointGeom.faces.push(new THREE.Face3(k+2, k+3, k));
-                    k += 4;
+                    addCircle(latticePointGeom, xy[0], xy[1], r, 12, zL);
                 }
             }
             var terrainMat = new THREE.MeshPhongMaterial( {
@@ -97,8 +105,38 @@ function load(meshURL, settings, callback) {
             });
             geom.computeFaceNormals();
             geom.computeVertexNormals();
-            //latticePointGeom.computeFaceNormals();
-            //latticePointGeom.computeVertexNormals();
+
+            var latticeArrowShaftGeom = new THREE.Geometry();
+            var latticeArrowHeadGeom = new THREE.Geometry();
+            var g = 0.02;
+            var a = 0.020;
+            var b = 0.010;
+            var c = 0.003;
+            k = 0;
+            for (i=0; i<m.N; ++i) {
+                for (j=0; j<m.M; ++j) {
+                    var nij = m.flow[i][j];
+                    if (nij !== null) {
+                        xy = m.ij_to_xy([i,j]);
+                        var nxy = m.ij_to_xy(nij);
+                        var ar = arrow.garrow([xy[0],xy[1]], [nxy[0],nxy[1]], g, a, b, c);
+                        ar.headFaces.forEach(function(p) {
+                            latticeArrowHeadGeom.vertices.push(new THREE.Vector3(p[0][0],p[0][1],zL),
+                                                               new THREE.Vector3(p[1][0],p[1][1],zL),
+                                                               new THREE.Vector3(p[2][0],p[2][1],zL));
+                            latticeArrowHeadGeom.faces.push(new THREE.Face3(k, k+1, k+2));
+                            k += 3;
+                        });
+                        ar.shaftFaces.forEach(function(p) {
+                            latticeArrowHeadGeom.vertices.push(new THREE.Vector3(p[0][0],p[0][1],zL),
+                                                               new THREE.Vector3(p[1][0],p[1][1],zL),
+                                                               new THREE.Vector3(p[2][0],p[2][1],zL));
+                            latticeArrowHeadGeom.faces.push(new THREE.Face3(k, k+1, k+2));
+                            k += 3;
+                        });
+                    }
+                }
+            }
 
             var edgeMat = new THREE.LineBasicMaterial({
                 color: settings.terrain.edgeColor,
@@ -112,9 +150,14 @@ function load(meshURL, settings, callback) {
                 color: 0x000000,
                 side: THREE.DoubleSide
             });
+
+            var latticeArrowObj = new THREE.Object3D();
+            latticeArrowObj.add(new THREE.LineSegments(latticeArrowShaftGeom, latticeLineMat));
+            latticeArrowObj.add(new THREE.Mesh(latticeArrowHeadGeom, latticePointMat));
             callback({
                 faces: new THREE.Mesh( geom, terrainMat ),
                 edges: new THREE.LineSegments(edgeGeom, edgeMat),
+                latticeArrows: latticeArrowObj,
                 //lattice: new THREE.LineSegments(latticeLineGeom, latticeLineMat),
                 lattice: new THREE.Mesh(latticePointGeom, latticePointMat),
                 m: m

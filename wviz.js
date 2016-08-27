@@ -57,6 +57,9 @@ wviz.setAxes = function(v) {
 wviz.setLattice = function(v) {
     wviz.lattice.visible = v;
 };
+wviz.setLatticeArrows = function(v) {
+    wviz.latticeArrows.visible = v;
+};
 wviz.setIJ = function(ij) {
     if (ij) {
         wviz.drop.moveToIJ(ij[0], ij[1]);
@@ -67,6 +70,7 @@ wviz.setLineWidth = function(a) {
     if (a !== null) {
         wviz.edges.material.linewidth = a;
         wviz.lattice.material.linewidth = a;
+        //wviz.latticeArrows.material.linewidth = a;
     }
 };
 
@@ -540,6 +544,9 @@ wviz.launch = function(canvas, width, height, commands) {
             world.add(t.lattice);
             wviz.lattice = t.lattice;
             wviz.lattice.visible = true;
+            world.add(t.latticeArrows);
+            wviz.latticeArrows = t.latticeArrows;
+            wviz.latticeArrows.visible = false;
             wviz.drop = makeDrop(wviz.m);
             world.add( wviz.drop.tobj );
             wviz.emit({type: "launched"});

@@ -183,6 +183,24 @@ var commands = [
         }
     },
     {
+        seq: "aa",
+        action: function() {
+            wviz.setLatticeArrows(!wviz.latticeArrows.visible);
+            permalink.set("latticeArrows", wviz.latticeArrows.visible);
+            updatePermalink();
+            wviz.requestRender();
+        },
+        msgfunc: function() { return "lattice arrows " + (wviz.latticeArrows.visible ? "on" : "off"); },
+        permalink: {
+            key: "latticeArrows",
+            urlKey: "aa",
+            default: null,
+            parse: parseBoolean,
+            toString: booleanToString,
+            setState: wviz.setLatticeArrows
+        }
+    },
+    {
         //seq: undefined // no kbd seq for this one
         permalink: {
             key: "ij",
