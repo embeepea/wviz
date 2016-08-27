@@ -43,9 +43,6 @@ wviz.settings = {
 };
 
 
-wviz.mouseWheelMode = "scale";
-wviz.mouseDragMode = "rotate";
-
 window.wviz = wviz;
 
 wviz.setEdges = function(v) {
@@ -176,38 +173,38 @@ wviz.hideNeighbors = function() {
         wviz.world.remove(wviz.neighbors);
     }
     wviz.neighbors = null;
+    wviz.requestRender();
 };
 
-wviz.toggleHeightLines = function() {
+wviz.showHeightLines = function() {
+    wviz.hideHeightLines();
+    wviz.heightLines = makeNeighborHeightLines();
+    wviz.world.add(wviz.heightLines);
+    wviz.requestRender();
+};
+
+wviz.hideHeightLines = function() {
     if (wviz.heightLines) {
         wviz.world.remove(wviz.heightLines);
-        wviz.heightLines = null;
-    } else {
-        wviz.heightLines = makeNeighborHeightLines();
-        wviz.world.add(wviz.heightLines);
     }
+    wviz.heightLines = null;
     wviz.requestRender();
 };
 
-wviz.toggleText = function() {
+wviz.showText = function() {
+    wviz.removeText();
+    wviz.text = makeNeighborText();
+    wviz.world.add(wviz.text);
+    wviz.requestRender();
+};
+
+wviz.removeText = function() {
     if (wviz.text) {
         wviz.world.remove(wviz.text);
-        wviz.text = null;
-    } else {
-        wviz.text = makeNeighborText();
-        wviz.world.add(wviz.text);
     }
+    wviz.text = null;
     wviz.requestRender();
 };
-
-wviz.toggleDropScale = function() {
-    if (wviz.mouseWheelMode === "scale") {
-        wviz.mouseWheelMode = "dropScale";
-    } else {
-        wviz.mouseWheelMode = "scale";
-    }
-};
-
 
 function createCamera(width, height) {
     var camera = new THREE.PerspectiveCamera( wviz.settings.camera.fov,

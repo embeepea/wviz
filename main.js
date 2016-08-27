@@ -11,6 +11,9 @@ var wviz = require('./wviz.js');
 var width, height, canvas;
 var permalink = null;
 
+var scaleTarget = "world";      // or "drop"
+var mouseDragMode = "rotate";   // or "translate"
+
 window.debug = require('./debug.js');
 
 function parseMatrix4(str) {
@@ -79,6 +82,13 @@ function parseIInt(str) {
 
 function intToString(a) { return sprintf("%1d", a); }
 
+function parseFFloat(str) {
+    if (typeof(str) === "string") { return parseFloat(str); }
+    return str;
+}
+
+function floatToString(a) { return sprintf("%.4f", a); }
+
 function parseDragMode(str) {
     if (str === "t" || str === "translate") { return "translate"; }
     return "rotate";
@@ -87,6 +97,16 @@ function parseDragMode(str) {
 function dragModeToString(m) {
     if (m === "translate" || m === "t") { return "t"; }
     return "r";
+}
+
+function parseScaleTarget(str) {
+    if (str === "d" || str === "drop") { return "drop"; }
+    return "world";
+}
+
+function scaleTargetToString(m) {
+    if (m === "drop" || m === "d") { return "d"; }
+    return "w";
 }
 
 var commands = [
@@ -190,6 +210,24 @@ var commands = [
         }
     },
 
+
+    {
+        //seq: undefined // no kbd seq for this one
+        permalink: {
+            key: "dr",
+            urlKey: "dr",
+            default: null,
+            parse: parseFFloat,
+            toString: floatToString,
+            setState: function(r) {
+                if (r) {
+                    wviz.settings.drop.radius = r;
+                    wviz.drop.setRadius(wviz.settings.drop.radius);
+                }
+            }
+        }
+    },
+
     {
         //seq: undefined // no kbd seq for this one
         permalink: {
@@ -231,7 +269,7 @@ var commands = [
     {
         seq: "t",
         action: function() {
-            wviz.mouseDragMode = "translate";
+            mouseDragMode = "translate";
             permalink.set("dragMode", "translate");
             updatePermalink();
         },
@@ -243,14 +281,14 @@ var commands = [
             parse: parseDragMode,
             toString: dragModeToString,
             setState: function(m) {
-                wviz.mouseDragMode = parseDragMode(m);
+                mouseDragMode = parseDragMode(m);
             }
         }
     },
     {
         seq: "r",
         action: function() {
-            wviz.mouseDragMode = "rotate";
+            mouseDragMode = "rotate";
             permalink.set("dragMode", "rotate");
             updatePermalink();
         },
@@ -262,7 +300,7 @@ var commands = [
             parse: parseDragMode,
             toString: dragModeToString,
             setState: function(m) {
-                wviz.mouseDragMode = parseDragMode(m);
+                mouseDragMode = parseDragMode(m);
             }
         }
     },
@@ -314,14 +352,81 @@ var commands = [
     },
 
     { seq: "h",
-      action: wviz.toggleHeightLines,
-      msgfunc: function() { return "toggle height lines"; } },
+      action: function() {
+          if (wviz.heightLines) {
+              wviz.hideHeightLines();
+          } else {
+              wviz.showHeightLines();
+          }
+          permalink.set("heightLines", !!wviz.heightLines);
+          updatePermalink();
+      },
+      msgfunc: function() { return "toggle height lines"; },
+      permalink: {
+            key: "heightLines",
+            urlKey: "h",
+            default: null,
+            parse: parseBoolean,
+            toString: booleanToString,
+            setState: function(v) {
+                if (v) {
+                    wviz.showHeightLines();
+                }
+            }
+      }
+    },
+
     { seq: "x",
-      action: wviz.toggleText,
-      msgfunc: function() { return "toggle text"; } },
+      action: function() {
+          if (wviz.text) {
+              wviz.hideText();
+          } else {
+              wviz.showText();
+          }
+          permalink.set("text", !!wviz.text);
+          updatePermalink();
+      },
+      msgfunc: function() { return "toggle text"; },
+      permalink: {
+            key: "text",
+            urlKey: "x",
+            default: null,
+            parse: parseBoolean,
+            toString: booleanToString,
+            setState: function(v) {
+                if (v) {
+                    wviz.showText();
+                }
+            }
+      }
+    },
+
     { seq: "ds",
-      action: wviz.toggleDropScale,
-      msgfunc: function() { return "toggle drop scale"; } },
+      action: function() {
+          if (scaleTarget === "drop") {
+              scaleTarget = "world";
+          } else {
+              scaleTarget = "drop";
+          }
+          permalink.set("dropScale", parseScaleTarget(scaleTarget));
+          updatePermalink();
+      },
+      msgfunc: function() { return "toggle drop scale"; },
+      permalink: {
+            key: "dropScale",
+            urlKey: "ds",
+            default: null,
+            parse: parseScaleTarget,
+            toString: scaleTargetToString,
+            setState: function(m) {
+                if (m) {
+                    scaleTarget = parseScaleTarget(m);
+                }
+            }
+      }
+    },
+
+
 
     { seq: " ",
       action: wviz.advanceOnce,
@@ -433,7 +538,7 @@ wviz.addListener("launched", function(e) {
             // is reversed (increasing towards the bottom of the screen), we need to negate
             // the y coord here; therefore we use (dp.y, dp.x, 0):
             var v, d, angle, L=null;
-            if (wviz.mouseDragMode === "rotate") {
+            if (mouseDragMode === "rotate") {
                 if (button === 0) {
                     v = new THREE.Vector3(dp.y, dp.x, 0).normalize();
                     d = Math.sqrt(dp.x*dp.x + dp.y*dp.y);
@@ -446,7 +551,7 @@ wviz.addListener("launched", function(e) {
                     if (dp.x - dp.y < 0) { angle = -angle; }
                     L = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0,0,1), angle);
                 }
-            } else if (wviz.mouseDragMode === "translate") {
+            } else if (mouseDragMode === "translate") {
                 L = new THREE.Matrix4().makeTranslation(dp.x/25, -dp.y/25, 0);
             }
             if (L) {
@@ -473,7 +578,7 @@ wviz.addListener("launched", function(e) {
                 if (event.ctrlKey && event.button === 0) {
                     // ctrl-left-click event
                     wviz.pick(p.x, p.y, function(x,y,z) {
-                        wviz.setCenter([x,y,z]);
+                        center.position.set(x,y,z);
                         if (permalink) {
                             permalink.set("center", [x,y,z]);
                             updatePermalink();
@@ -485,7 +590,7 @@ wviz.addListener("launched", function(e) {
         },
         mouseWheel: function(delta) {
             var s;
-            if (wviz.mouseWheelMode === "scale") {
+            if (scaleTarget === "world") {
                 s = Math.exp(delta/20.0);
                 var R = new THREE.Matrix4().makeScale(s,s,s);
                 var M = EventTracker.computeTransform(moving,center,frame, R);
@@ -496,10 +601,14 @@ wviz.addListener("launched", function(e) {
                 }
                 moving.matrixWorldNeedsUpdate = true;
                 wviz.requestRender();
-            } else if (wviz.mouseWheelMode === "dropScale") {
+            } else if (scaleTarget === "drop") {
                 s = Math.exp(delta/20.0);
                 wviz.settings.drop.radius *= s;
                 wviz.drop.setRadius(wviz.settings.drop.radius);
+                if (permalink) {
+                    permalink.set("dr", wviz.settings.drop.radius);
+                    updatePermalink();
+                }
                 wviz.requestRender();
             }
         },
