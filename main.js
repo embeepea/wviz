@@ -597,7 +597,7 @@ wviz.addListener("launched", function(e) {
                     L = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0,0,1), angle);
                 }
             } else if (mouseDragMode === "translate") {
-                L = new THREE.Matrix4().makeTranslation(dp.x/25, -dp.y/25, 0);
+                L = new THREE.Matrix4().makeTranslation(dp.x/50, -dp.y/50, 0);
             }
             if (L) {
                 var M = EventTracker.computeTransform(moving,center,frame, L);
