@@ -20,7 +20,8 @@ wviz.settings = {
         edgeColor: 0x000000,
         lineWidth: 1,
         edgeZNudge: 0.01,
-        latticeZ: -2,
+        //latticeZ: -2,
+        latticeZ: -0.5,
         latticeColor: 0x000000
     },
     lights: {
@@ -116,8 +117,23 @@ function makeDrop(m) {
     obj.add(spherePositionObj);
     obj.add(circlePositionObj);
 
+    var terrainTrailObj = new THREE.Object3D();
+    var trailTObj = new THREE.Object3D();
+    trailTObj.add(terrainTrailObj);
+    var trailMat = new THREE.LineBasicMaterial({
+        color: 0x0000ff,
+        linewidth: 4
+    });
+    var lastTrailPoint = null;
+
+    //var terrainTrailGeom = new THREE.Geometry();
+    //var terrainTrailSegments = null;
+    //var terrainTrailSegments = new THREE.LineSegments(terrainTrailGeom, trailMat);
+    //terrainTrailObj.add(terrainTrailSegments);
+
     return {
         tobj: obj,
+        trailTObj: trailTObj,
         ij: null,
         moveToIJ: function(i,j) {
             var xy = m.ij_to_xy([i,j]);
@@ -130,6 +146,19 @@ function makeDrop(m) {
             spherePositionObj.position.set(x,y,z);
             circlePositionObj.visible = true;
             circlePositionObj.position.set(x,y,wviz.settings.terrain.latticeZ-0.001);
+            if (lastTrailPoint) {
+                var terrainTrailGeom = new THREE.Geometry();
+                terrainTrailGeom.vertices.push(new THREE.Vector3(lastTrailPoint[0],
+                                                                 lastTrailPoint[1],
+                                                                 lastTrailPoint[2]));
+                terrainTrailGeom.vertices.push(new THREE.Vector3(x, y, m.meshData[j][i]));
+                if (terrainTrailSegments) {
+                    terrainTrailObj.remove(terrainTrailSegments);
+                }
+                var terrainTrailSegments = new THREE.LineSegments(terrainTrailGeom, trailMat);
+                terrainTrailObj.add(terrainTrailSegments);
+            }
+            lastTrailPoint = [x,y,m.meshData[j][i]];
             wviz.emit({type: "ijset", ij: [i,j]});
         },
         moveDropToXYZ: function (x,y,z) {
@@ -141,8 +170,13 @@ function makeDrop(m) {
         setRadius: function(r) {
             sphereScaleObj.scale.set(r,r,r);
             circleScaleObj.scale.set(r,r,r);
+        },
+        clearTrail: function() {
+            trailTObj.remove(terrainTrailObj);
+            terrainTrailObj = new THREE.Object3D();
+            trailTObj.add(terrainTrailObj);
+            lastTrailPoint = null;
         }
-
     };
 }
 
@@ -205,13 +239,13 @@ wviz.hideHeightLines = function() {
 };
 
 wviz.showText = function() {
-    wviz.removeText();
+    wviz.hideText();
     wviz.text = makeNeighborText();
     wviz.world.add(wviz.text);
     wviz.requestRender();
 };
 
-wviz.removeText = function() {
+wviz.hideText = function() {
     if (wviz.text) {
         wviz.world.remove(wviz.text);
     }
@@ -567,6 +601,7 @@ wviz.launch = function(canvas, width, height, commands) {
 
             wviz.drop = makeDrop(wviz.m);
             world.add( wviz.drop.tobj );
+            zNudgedEdges.add(wviz.drop.trailTObj);
             wviz.emit({type: "launched"});
             wviz.requestRender();
         });

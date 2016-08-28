@@ -616,6 +616,7 @@ wviz.addListener("launched", function(e) {
                     // shift-left-click event
                     wviz.pick(p.x, p.y, function(x,y,z) {
                         var ij = wviz.m.xy_to_ij([x,y]);
+                        wviz.drop.clearTrail();
                         wviz.drop.moveToIJ(ij[0], ij[1]);
                         wviz.requestRender();
                     });

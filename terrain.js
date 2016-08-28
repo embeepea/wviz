@@ -152,7 +152,6 @@ function load(meshURL, settings, callback) {
             });
 
             var latticeArrowObj = new THREE.Object3D();
-            latticeArrowObj.add(new THREE.LineSegments(latticeArrowShaftGeom, latticeLineMat));
             latticeArrowObj.add(new THREE.Mesh(latticeArrowHeadGeom, latticePointMat));
             
             var quadGeom = new THREE.Geometry();
@@ -173,7 +172,6 @@ function load(meshURL, settings, callback) {
                 faces: new THREE.Mesh( geom, terrainMat ),
                 edges: new THREE.LineSegments(edgeGeom, edgeMat),
                 latticeArrows: latticeArrowObj,
-                //lattice: new THREE.LineSegments(latticeLineGeom, latticeLineMat),
                 lattice: new THREE.Mesh(latticePointGeom, latticePointMat),
                 latticeQuad: quadMesh,
                 m: m
