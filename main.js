@@ -566,6 +566,16 @@ wviz.addListener("launched", function(e) {
     var frame  = wviz.camera;
     var eventTracker = EventTracker.eventTracker(canvas, {
         mouseDown: function(p) {
+            //console.log(p);
+                    wviz.pick(p.x, p.y, function(x,y,z) {
+                        center.position.set(x,y,z);
+                        if (permalink) {
+                            permalink.set("center", [x,y,z]);
+                            updatePermalink();
+                        }
+                        wviz.requestRender();
+                    });
+
         },
         mouseDrag: function(p, dp, button) {
             // Note: the axis of rotation for a mouse displacement of (dp.x,dp.y) would
@@ -623,9 +633,16 @@ wviz.addListener("launched", function(e) {
                 }
             }
         },
-        mouseWheel: function(delta) {
+        mouseWheel: function(delta, p) {
             var s;
             if (scaleTarget === "world") {
+                wviz.pick(p.x, p.y, function(x,y,z) {
+                    center.position.set(x,y,z);
+                    if (permalink) {
+                        permalink.set("center", [x,y,z]);
+                        updatePermalink();
+                    }
+                });
                 s = Math.exp(delta/20.0);
                 var R = new THREE.Matrix4().makeScale(s,s,s);
                 var M = EventTracker.computeTransform(moving,center,frame, R);

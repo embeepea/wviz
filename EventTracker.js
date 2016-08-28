@@ -116,7 +116,8 @@ var EventTracker = function(domElement, handler) {
 		    } else if ( event.detail ) { // Firefox
 			    delta = - event.detail / 3;
 		    }
-            handler.mouseWheel(delta);
+            var p = relCoords(event);
+            handler.mouseWheel(delta, p);
         }
     };
     var touchStart = function(event) {

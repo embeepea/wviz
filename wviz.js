@@ -25,9 +25,14 @@ wviz.settings = {
     },
     lights: {
         point: [
-            { position: [ 0,  0, 10], color: 0xffffff, intensity: 0.6, distance: 0, decay: 1 },
-            { position: [10,  0,  0], color: 0xffffff, intensity: 0.6, distance: 0, decay: 1 },
-            { position: [ 0, 10,  0], color: 0xffffff, intensity: 0.6, distance: 0, decay: 1 }
+//            { position: [ 0,  0, 10], color: 0xffffff, intensity: 0.6, distance: 0, decay: 1 },
+//            { position: [10,  0,  0], color: 0xffffff, intensity: 0.6, distance: 0, decay: 1 },
+//            { position: [ 0, 10,  0], color: 0xffffff, intensity: 0.6, distance: 0, decay: 1 }
+        ],
+        directional: [
+            { position: [ 0,  0, 10], color: 0xffffff, intensity: 0.4 },
+            { position: [10,  0,  0], color: 0xffffff, intensity: 0.4 },
+            { position: [ 0, 10,  0], color: 0xffffff, intensity: 0.4 }
         ]
     },
     camera: {
@@ -507,6 +512,11 @@ wviz.launch = function(canvas, width, height, commands) {
     scene.add( new THREE.AmbientLight( 0x222222 ) );
     wviz.settings.lights.point.forEach(function(lt) {
         var light = new THREE.PointLight( lt.color, lt.intensity, lt.distance, lt.decay );
+        light.position.set(lt.position[0], lt.position[1], lt.position[2]);
+        scene.add( light );
+    });
+    wviz.settings.lights.directional.forEach(function(lt) {
+        var light = new THREE.DirectionalLight( lt.color, lt.intensity );
         light.position.set(lt.position[0], lt.position[1], lt.position[2]);
         scene.add( light );
     });
