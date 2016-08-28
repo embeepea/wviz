@@ -14,6 +14,14 @@ var permalink = null;
 var scaleTarget = "world";      // or "drop"
 var mouseDragMode = "rotate";   // or "translate"
 
+var visible = {
+    edges: true,
+    faces: true,
+    axes: false,
+    lattice: false,
+    latticeArrows: false
+};
+
 window.debug = require('./debug.js');
 
 function parseMatrix4(str) {
@@ -113,8 +121,9 @@ var commands = [
     {
         seq: "ae",
         action: function() {
-            wviz.setEdges(!wviz.edges.visible);
-            permalink.set("edges", wviz.edges.visible);
+            visible["edges"] = !visible["edges"];
+            wviz.setEdges(visible["edges"]);
+            permalink.set("edges", visible["edges"]);
             updatePermalink();
             wviz.requestRender();
         },
@@ -131,8 +140,9 @@ var commands = [
     {
         seq: "af",
         action: function() {
-            wviz.setFaces(!wviz.faces.visible);
-            permalink.set("faces", wviz.faces.visible);
+            visible["faces"] = !visible["faces"];
+            wviz.setFaces(visible["faces"]);
+            permalink.set("faces", visible["faces"]);
             updatePermalink();
             wviz.requestRender();
         },
@@ -149,8 +159,9 @@ var commands = [
     {
         seq: "ac",
         action: function() {
-            wviz.setAxes(!wviz.axes.visible);
-            permalink.set("axes", wviz.axes.visible);
+            visible["axes"] = !visible["axes"];
+            wviz.setAxes(visible["axes"]);
+            permalink.set("axes", visible["axes"]);
             updatePermalink();
             wviz.requestRender();
         },
@@ -167,8 +178,9 @@ var commands = [
     {
         seq: "al",
         action: function() {
-            wviz.setLattice(!wviz.lattice.visible);
-            permalink.set("lattice", wviz.lattice.visible);
+            visible["lattice"] = !visible["lattice"];
+            wviz.setLattice(visible["lattice"]);
+            permalink.set("lattice", visible["lattice"]);
             updatePermalink();
             wviz.requestRender();
         },
@@ -185,8 +197,9 @@ var commands = [
     {
         seq: "aa",
         action: function() {
-            wviz.setLatticeArrows(!wviz.latticeArrows.visible);
-            permalink.set("latticeArrows", wviz.latticeArrows.visible);
+            visible["latticeArrows"] = !visible["latticeArrows"];
+            wviz.setLatticeArrows(visible["latticeArrows"]);
+            permalink.set("latticeArrows", visible["latticeArrows"]);
             updatePermalink();
             wviz.requestRender();
         },
@@ -486,7 +499,7 @@ function Permalink(url, commands) {
     };
     var vals = {};
     pl.have = function(k) {
-        return (k in vals && vals[k].key !== vals[k].default);
+        return (k in vals && vals[k].val !== vals[k].default);
     };
     pl.get = function(k) {
         if (!(k in vals)) { return undefined; }
@@ -558,8 +571,12 @@ var kp = kbd_processor(commands,
                            fadeMessage();
                        });
 
-
 wviz.addListener("launched", function(e) {
+    wviz.setEdges(visible["edges"]);
+    wviz.setFaces(visible["faces"]);
+    wviz.setAxes(visible["axes"]);
+    wviz.setLattice(visible["lattice"]);
+    wviz.setLatticeArrows(visible["latticeArrows"]);
     permalink = Permalink(URL({url: window.location.toString()}), commands);
     var moving = wviz.world;
     var center = wviz.axes;

@@ -584,17 +584,13 @@ wviz.launch = function(canvas, width, height, commands) {
         terrain.load('./data/dem3.mesh', wviz.settings, function(t) {
             wviz.m = t.m;
             wviz.faces = t.faces;
-            wviz.faces.visible = true;
             world.add(t.faces);
             zNudgedEdges.add(t.edges);
             wviz.edges = t.edges;
-            wviz.edges.visible = true;
             world.add(t.lattice);
             wviz.lattice = t.lattice;
-            wviz.lattice.visible = true;
             world.add(t.latticeArrows);
             wviz.latticeArrows = t.latticeArrows;
-            wviz.latticeArrows.visible = false;
 
             world.add(t.latticeQuad);
             wviz.latticeQuad = t.latticeQuad;
