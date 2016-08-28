@@ -104,12 +104,44 @@ function makeDrop(m) {
     spherePositionObj.add(sphereScaleObj);
     spherePositionObj.visible = false;
 
-    var circleScaleObj = new THREE.Object3D();
-    circleScaleObj.scale.set(wviz.settings.drop.radius,
-                             wviz.settings.drop.radius,
-                             wviz.settings.drop.radius);
-    circleScaleObj.add( new THREE.Mesh( new THREE.CircleGeometry( 1, 8 ), flatDropMat ) );
+    function addCircle(geom,x,y,r,n,z) {
+        var a = Math.PI/4;
+        var da = 2*Math.PI/n;
+        var ps = [];
+        var i;
+        var k = geom.vertices.length;
+        for (i=0; i<n; ++i) {
+            geom.vertices.push(new THREE.Vector3(x+r*Math.cos(a),y+r*Math.sin(a),z));
+            a += da;
+            geom.vertices.push(new THREE.Vector3(x+r*Math.cos(a),y+r*Math.sin(a),z));
+        }
+    }
+
+    function addAnnulus(geom,x,y,r0,r1,n,z) {
+        var a = Math.PI/4;
+        var da = 2*Math.PI/n;
+        var ps = [];
+        var i;
+        var k = geom.vertices.length;
+        var n2 = 2*n;
+        for (i=0; i<n; ++i) {
+            geom.vertices.push(new THREE.Vector3(x+r0*Math.cos(a),y+r0*Math.sin(a),z));
+            geom.vertices.push(new THREE.Vector3(x+r1*Math.cos(a),y+r1*Math.sin(a),z));
+            a += da;
+            geom.faces.push(new THREE.Face3((k  )%n2, (k+1)%n2, (k+2)%n2),
+                            new THREE.Face3((k+2)%n2, (k+1)%n2, (k+3)%n2));
+            k += 2;
+        }
+    }
+
+    var circleLineMat = new THREE.LineBasicMaterial({
+        color: 0x0000ff,
+        linewidth: 8
+    });
     var circlePositionObj = new THREE.Object3D();
+    var circleGeom = new THREE.Geometry();
+    addAnnulus(circleGeom, 0, 0, 0.015, 0.035, 12, 0);
+    var circleScaleObj = new THREE.Mesh(circleGeom, flatDropMat);
     circlePositionObj.add(circleScaleObj);
     circlePositionObj.visible = false;
 
@@ -169,7 +201,7 @@ function makeDrop(m) {
         },
         setRadius: function(r) {
             sphereScaleObj.scale.set(r,r,r);
-            circleScaleObj.scale.set(r,r,r);
+            //circleScaleObj.scale.set(r,r,r);
         },
         clearTrail: function() {
             trailTObj.remove(terrainTrailObj);
