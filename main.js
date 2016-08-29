@@ -19,7 +19,9 @@ var visible = {
     faces: true,
     axes: false,
     lattice: false,
-    latticeArrows: false
+    latticeArrows: false,
+    d2: true,
+    d3: true
 };
 
 window.debug = require('./debug.js');
@@ -118,6 +120,44 @@ function scaleTargetToString(m) {
 }
 
 var commands = [
+    {
+        seq: "at",
+        action: function() {
+            visible["d3"] = !visible["d3"];
+            wviz.set3D(visible["d3"]);
+            permalink.set("d3", visible["d3"]);
+            updatePermalink();
+            wviz.requestRender();
+        },
+        msgfunc: function() { return "3D " + (wviz.d3.visible ? "on" : "off"); },
+        permalink: {
+            key: "d3",
+            urlKey: "d3",
+            default: null,
+            parse: parseBoolean,
+            toString: booleanToString,
+            setState: wviz.set3D
+        }
+    },
+    {
+        seq: "ar",
+        action: function() {
+            visible["d2"] = !visible["d2"];
+            wviz.set2D(visible["d2"]);
+            permalink.set("d2", visible["d2"]);
+            updatePermalink();
+            wviz.requestRender();
+        },
+        msgfunc: function() { return "2D " + (wviz.d2.visible ? "on" : "off"); },
+        permalink: {
+            key: "d2",
+            urlKey: "d2",
+            default: null,
+            parse: parseBoolean,
+            toString: booleanToString,
+            setState: wviz.set2D
+        }
+    },
     {
         seq: "ae",
         action: function() {

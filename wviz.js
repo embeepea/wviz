@@ -72,6 +72,13 @@ wviz.setIJ = function(ij) {
     }
 };
 
+wviz.set2D = function(v) {
+    wviz.d2.visible = v;
+};
+wviz.set3D = function(v) {
+    wviz.d3.visible = v;
+};
+
 wviz.setLineWidth = function(a) {
     if (a !== null) {
         wviz.edges.material.linewidth = a;
@@ -145,9 +152,10 @@ function makeDrop(m) {
     circlePositionObj.add(circleScaleObj);
     circlePositionObj.visible = false;
 
-    var obj = new THREE.Object3D();
-    obj.add(spherePositionObj);
-    obj.add(circlePositionObj);
+    var terrainDropObj = new THREE.Object3D();
+    terrainDropObj.add(spherePositionObj);
+    var flatDropObj = new THREE.Object3D();
+    flatDropObj.add(circlePositionObj);
 
     var trailMat = new THREE.LineBasicMaterial({
         color: 0x0000ff,
@@ -155,19 +163,16 @@ function makeDrop(m) {
     });
     var terrainTrailObj = new THREE.Object3D();
     var flatTrailObj = new THREE.Object3D();
-    var trailTObj = new THREE.Object3D();
-    trailTObj.add(terrainTrailObj);
-    trailTObj.add(flatTrailObj);
+    var terrainTrailTObj = new THREE.Object3D();
+    var flatTrailTObj = new THREE.Object3D();
+    terrainTrailTObj.add(terrainTrailObj);
+    flatTrailTObj.add(flatTrailObj);
     var lastTrailPoint = null;
-
-    //var terrainTrailGeom = new THREE.Geometry();
-    //var terrainTrailSegments = null;
-    //var terrainTrailSegments = new THREE.LineSegments(terrainTrailGeom, trailMat);
-    //terrainTrailObj.add(terrainTrailSegments);
-
     return {
-        tobj: obj,
-        trailTObj: trailTObj,
+        terrainDropObj: terrainDropObj,
+        flatDropObj: flatDropObj,
+        terrainTrailTObj: terrainTrailTObj,
+        flatTrailTObj: flatTrailTObj,
         ij: null,
         moveToIJ: function(i,j) {
             var xy = m.ij_to_xy([i,j]);
@@ -209,12 +214,12 @@ function makeDrop(m) {
             //circleScaleObj.scale.set(r,r,r);
         },
         clearTrail: function() {
-            trailTObj.remove(terrainTrailObj);
-            trailTObj.remove(flatTrailObj);
+            terrainTrailTObj.remove(terrainTrailObj);
+            flatTrailTObj.remove(flatTrailObj);
             terrainTrailObj = new THREE.Object3D();
             flatTrailObj = new THREE.Object3D();
-            trailTObj.add(terrainTrailObj);
-            trailTObj.add(flatTrailObj);
+            terrainTrailTObj.add(terrainTrailObj);
+            flatTrailTObj.add(flatTrailObj);
             lastTrailPoint = null;
         }
     };
@@ -485,16 +490,18 @@ function makeNeighborText() {
     var R = 5;
     for (i=wviz.drop.ij[0]-R; i<=wviz.drop.ij[0]+R; ++i) {
         for (j=wviz.drop.ij[1]-R; j<=wviz.drop.ij[1]+R; ++j) {
-            var xy = wviz.m.ij_to_xy([i,j]);
-            var oneTextObj = new THREE.Object3D();
-            var textGeom = new THREE.TextGeometry(sprintf("%.3f", wviz.m.meshData[j][i]),
-                                                  textOptions);
-            var textMesh = new THREE.Mesh(textGeom, mat);
-            oneTextObj.add(textMesh);
-            oneTextObj.position.set(xy[0] + textOptions.size,
-                                    xy[1] + textOptions.size,
-                                    wviz.settings.terrain.latticeZ);
-            textObj.add(oneTextObj);
+            if (wviz.m.inRange([i,j])) {
+                var xy = wviz.m.ij_to_xy([i,j]);
+                var oneTextObj = new THREE.Object3D();
+                var textGeom = new THREE.TextGeometry(sprintf("%.3f", wviz.m.meshData[j][i]),
+                                                      textOptions);
+                var textMesh = new THREE.Mesh(textGeom, mat);
+                oneTextObj.add(textMesh);
+                oneTextObj.position.set(xy[0] + textOptions.size,
+                                        xy[1] + textOptions.size,
+                                        wviz.settings.terrain.latticeZ);
+                textObj.add(oneTextObj);
+            }
         }
     }
     return textObj;
@@ -566,21 +573,27 @@ wviz.launch = function(canvas, width, height, commands) {
 
     var camera = createCamera(width, height);
     wviz.camera = camera;
-    var world = new THREE.Object3D();
-    wviz.world = world;
-    var zNudgedEdges = new THREE.Object3D();
-    world.matrixAutoUpdate = false;
-    zNudgedEdges.matrixAutoUpdate = false;
-    world.add(zNudgedEdges);
+    wviz.world = new THREE.Object3D();
+    wviz.d3 = new THREE.Object3D();
+    wviz.d2 = new THREE.Object3D();
+    wviz.world.add(wviz.d2);
+    wviz.world.add(wviz.d3);
+    var zNudged3DEdges = new THREE.Object3D();
+    var zNudged2DEdges = new THREE.Object3D();
+    wviz.world.matrixAutoUpdate = false;
+    zNudged3DEdges.matrixAutoUpdate = false;
+    zNudged2DEdges.matrixAutoUpdate = false;
+    wviz.d3.add(zNudged3DEdges);
+    wviz.d2.add(zNudged2DEdges);
     wviz.axes = axes3D({
         length: 0.75,
         tipRadius: 0.05,
         tipHeight: 0.3
     });
-    world.add(wviz.axes);
+    wviz.d3.add(wviz.axes);
     var scene = new THREE.Scene();
     var worldContainer = new THREE.Object3D();
-    worldContainer.add( world );
+    worldContainer.add( wviz.world );
     scene.add( camera );
     scene.add( worldContainer );
     scene.add( new THREE.AmbientLight( 0x222222 ) );
@@ -597,9 +610,10 @@ wviz.launch = function(canvas, width, height, commands) {
 
     function render() {
         var T = new THREE.Matrix4().makeTranslation(0, 0, wviz.settings.terrain.edgeZNudge);
-        var M = EventTracker.computeTransform(zNudgedEdges,camera,camera, T);
-        zNudgedEdges.matrix = M;
-        zNudgedEdges.matrixWorldNeedsUpdate = true;
+        zNudged3DEdges.matrix = EventTracker.computeTransform(zNudged3DEdges,camera,camera, T);
+        zNudged3DEdges.matrixWorldNeedsUpdate = true;
+        zNudged2DEdges.matrix = EventTracker.computeTransform(zNudged2DEdges,camera,camera, T);
+        zNudged2DEdges.matrixWorldNeedsUpdate = true;
         renderer.render( scene, camera );
     };
 
@@ -624,20 +638,22 @@ wviz.launch = function(canvas, width, height, commands) {
         terrain.load('./data/dem3.mesh', wviz.settings, function(t) {
             wviz.m = t.m;
             wviz.faces = t.faces;
-            world.add(t.faces);
-            zNudgedEdges.add(t.edges);
+            wviz.d3.add(t.faces);
+            zNudged3DEdges.add(t.edges);
             wviz.edges = t.edges;
-            world.add(t.lattice);
+            wviz.d2.add(t.lattice);
             wviz.lattice = t.lattice;
-            world.add(t.latticeArrows);
+            wviz.d2.add(t.latticeArrows);
             wviz.latticeArrows = t.latticeArrows;
 
-            world.add(t.latticeQuad);
+            wviz.d2.add(t.latticeQuad);
             wviz.latticeQuad = t.latticeQuad;
 
             wviz.drop = makeDrop(wviz.m);
-            world.add( wviz.drop.tobj );
-            zNudgedEdges.add(wviz.drop.trailTObj);
+            wviz.d3.add( wviz.drop.terrainDropObj );
+            wviz.d2.add( wviz.drop.flatDropObj );
+            zNudged3DEdges.add(wviz.drop.terrainTrailTObj);
+            zNudged3DEdges.add(wviz.drop.flatTrailTObj);
             wviz.emit({type: "launched"});
             wviz.requestRender();
         });
@@ -666,7 +682,7 @@ wviz.launch = function(canvas, width, height, commands) {
             }
         });
         if (minObj) {
-            var Tw = world.matrixWorld;
+            var Tw = wviz.world.matrixWorld;
             var TwInv = new THREE.Matrix4();    
             TwInv.getInverse(Tw);
             var p = new THREE.Vector4(minObj.point.x,minObj.point.y,minObj.point.z,1);
