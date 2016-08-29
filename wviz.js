@@ -39,6 +39,13 @@ wviz.settings = {
     camera: {
         fov: 45,
         position: [1,-15,15],
+        near: 0.1,
+        far: 1000,
+// for essentially orthographic projection, use the following:
+//        fov: 0.1,
+//        position: [0,0,1000],
+//        near: 0.1,
+//        far: 10000,
         up: [0,1,0],
         lookAt: [0,0,0]
     },
@@ -300,7 +307,9 @@ wviz.hideText = function() {
 
 function createCamera(width, height) {
     var camera = new THREE.PerspectiveCamera( wviz.settings.camera.fov,
-                                              width / height, 0.1, 1000 );
+                                              width / height,
+                                              wviz.settings.camera.near,
+                                              wviz.settings.camera.far);
     camera.matrixAutoUpdate = false;
 
     camera.position.set(wviz.settings.camera.position[0],
