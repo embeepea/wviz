@@ -14,7 +14,9 @@ var wviz = {};
 event_emitter(wviz);
 
 wviz.settings = {
-    backgroundColor: 0x555555,
+    //backgroundColor: 0x555555,
+    //backgroundColor: 0x7ec0ee,
+    backgroundColor: 0xffffff,
     terrain: {
         diffuseColor: 0x88ff88,
         edgeColor: 0x000000,
@@ -263,13 +265,13 @@ wviz.advanceAll = function(a) {
 wviz.showNeighbors = function() {
     wviz.hideNeighbors();
     wviz.neighbors = makeNeighborPoints();
-    wviz.world.add(wviz.neighbors);
+    wviz.d3.add(wviz.neighbors);
     wviz.requestRender();
 };
 
 wviz.hideNeighbors = function() {
     if (wviz.neighbors) {
-        wviz.world.remove(wviz.neighbors);
+        wviz.d3.remove(wviz.neighbors);
     }
     wviz.neighbors = null;
     wviz.requestRender();
@@ -278,13 +280,13 @@ wviz.hideNeighbors = function() {
 wviz.showHeightLines = function() {
     wviz.hideHeightLines();
     wviz.heightLines = makeNeighborHeightLines();
-    wviz.world.add(wviz.heightLines);
+    wviz.d3.add(wviz.heightLines);
     wviz.requestRender();
 };
 
 wviz.hideHeightLines = function() {
     if (wviz.heightLines) {
-        wviz.world.remove(wviz.heightLines);
+        wviz.d3.remove(wviz.heightLines);
     }
     wviz.heightLines = null;
     wviz.requestRender();
@@ -293,13 +295,13 @@ wviz.hideHeightLines = function() {
 wviz.showText = function() {
     wviz.hideText();
     wviz.text = makeNeighborText();
-    wviz.world.add(wviz.text);
+    wviz.d2.add(wviz.text);
     wviz.requestRender();
 };
 
 wviz.hideText = function() {
     if (wviz.text) {
-        wviz.world.remove(wviz.text);
+        wviz.d2.remove(wviz.text);
     }
     wviz.text = null;
     wviz.requestRender();
@@ -391,7 +393,7 @@ function axes3D(options) {
     return axes;
 }
 
-function neighborIJPoints(ij) {
+function neighborIJPoints(ij, includeSelf) {
     if (!ij) { return null; }
     var i = ij[0];
     var j = ij[1];
@@ -399,7 +401,7 @@ function neighborIJPoints(ij) {
     var points = [];
     for (ii=i-1; ii<=i+1; ++ii) {
         for (jj=j-1; jj<=j+1; ++jj) {
-            if ((ii!==i || jj!==j)
+            if ((ii!==i || jj!==j || includeSelf)
                 && ii >= 0 && ii < wviz.m.N
                 && jj >= 0 && jj < wviz.m.M) {
                 points.push([ii,jj]);
@@ -415,13 +417,13 @@ function makeNeighborPoints() {
     var points = neighborIJPoints(wviz.drop.ij);
     if (points === null) { return null; }
 
-    var yellowSurfaceMaterial = new THREE.MeshPhongMaterial({
-        color: 0xffff00,
+    var defaultSurfaceMaterial = new THREE.MeshPhongMaterial({
+        color: 0x000000,
         side: THREE.DoubleSide,
         shading: THREE.SmoothShading
     });
-    var blueSurfaceMaterial = new THREE.MeshPhongMaterial({
-        color: 0x0000ff,
+    var nextSurfaceMaterial = new THREE.MeshPhongMaterial({
+        color: 0x00ff00,
         side: THREE.DoubleSide,
         shading: THREE.SmoothShading
     });
@@ -429,8 +431,9 @@ function makeNeighborPoints() {
     points.forEach(function(point) {
         var xy = wviz.m.ij_to_xy(point);
         var next = wviz.m.flow[wviz.drop.ij[0]][wviz.drop.ij[1]];
-        var mat = (point[0]===next[0] && point[1]===next[1]) ? blueSurfaceMaterial : yellowSurfaceMaterial;
-        var mesh = new THREE.Mesh(new THREE.SphereGeometry( wviz.settings.drop.radius/2, 8, 8 ), mat);
+        var mat = (point[0]===next[0] && point[1]===next[1]) ? nextSurfaceMaterial : defaultSurfaceMaterial;
+        var sph = new THREE.SphereGeometry( wviz.settings.drop.radius/2, 8, 8 );
+        var mesh = new THREE.Mesh(sph, mat);
         mesh.position.set(xy[0], xy[1], wviz.m.meshData[point[1]][point[0]]);
         neighbors.add( mesh );
     });
@@ -438,34 +441,43 @@ function makeNeighborPoints() {
 }
 
 function makeNeighborHeightLines() {
-    var points = neighborIJPoints(wviz.drop.ij);
+    var points = neighborIJPoints(wviz.drop.ij, true);
     if (points === null) { return null; }
 
-    var yellowLineMat = new THREE.LineBasicMaterial({
-        color: 0xffff00,
-        linewidth: wviz.settings.terrain.lineWidth
+    var defaultLineMat = new THREE.LineBasicMaterial({
+        color: 0x000000,
+        linewidth: 3
     });
-    var blueLineMat = new THREE.LineBasicMaterial({
+    var currentLineMat = new THREE.LineBasicMaterial({
         color: 0x0000ff,
-        linewidth: wviz.settings.terrain.lineWidth
+        linewidth: 3
+    });
+    var nextLineMat = new THREE.LineBasicMaterial({
+        color: 0x00ff00,
+        linewidth: 3
     });
 
-    var yellowLineGeom = new THREE.Geometry();
-    var blueLineGeom = new THREE.Geometry();
-    var yellowObj = new THREE.LineSegments(yellowLineGeom, yellowLineMat);
-    var blueObj = new THREE.LineSegments(blueLineGeom, blueLineMat);
+    var defaultLineGeom = new THREE.Geometry();
+    var currentLineGeom = new THREE.Geometry();
+    var nextLineGeom = new THREE.Geometry();
+    var defaultObj = new THREE.LineSegments(defaultLineGeom, defaultLineMat);
+    var currentObj = new THREE.LineSegments(currentLineGeom, currentLineMat);
+    var nextObj = new THREE.LineSegments(nextLineGeom, nextLineMat);
     var lines = new THREE.Object3D();
-    lines.add(yellowObj);
-    lines.add(blueObj);
+    lines.add(defaultObj);
+    lines.add(currentObj);
+    lines.add(nextObj);
     points.forEach(function(point) {
         var xy = wviz.m.ij_to_xy(point);
         var p0 = new THREE.Vector3(xy[0], xy[1], wviz.settings.terrain.latticeZ);
         var p1 = new THREE.Vector3(xy[0], xy[1], wviz.m.meshData[point[1]][point[0]]);
         var next = wviz.m.flow[wviz.drop.ij[0]][wviz.drop.ij[1]];
         if (point[0]===next[0] && point[1]===next[1]) {
-            blueLineGeom.vertices.push(p0, p1);
+            nextLineGeom.vertices.push(p0, p1);
+        } else if (point[0]===wviz.drop.ij[0] && point[1]===wviz.drop.ij[1]) {
+            currentLineGeom.vertices.push(p0, p1);
         } else {
-            yellowLineGeom.vertices.push(p0, p1);
+            defaultLineGeom.vertices.push(p0, p1);
         }
     });
     return lines;
@@ -662,7 +674,7 @@ wviz.launch = function(canvas, width, height, commands) {
             wviz.d3.add( wviz.drop.terrainDropObj );
             wviz.d2.add( wviz.drop.flatDropObj );
             zNudged3DEdges.add(wviz.drop.terrainTrailTObj);
-            zNudged3DEdges.add(wviz.drop.flatTrailTObj);
+            zNudged2DEdges.add(wviz.drop.flatTrailTObj);
             wviz.emit({type: "launched"});
             wviz.requestRender();
         });
