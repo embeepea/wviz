@@ -77,21 +77,21 @@ var kp = kbd_processor(commands,
                        });
 
 wviz.addListener("launched", function(e) {
-    permalink = Permalink(URL({url: window.location.toString()}), commands);
+    state.permalink = Permalink(URL({url: window.location.toString()}), commands);
+    permalink = state.permalink;
     var moving = wviz.world;
     var center = wviz.axes;
     var frame  = wviz.camera;
     var eventTracker = EventTracker.eventTracker(canvas, {
         mouseDown: function(p) {
-            //console.log(p);
-                    //wviz.pick(p.x, p.y, function(x,y,z) {
-                    //    center.position.set(x,y,z);
-                    //    if (permalink) {
-                    //        permalink.set("center", [x,y,z]);
-                    //        permalink.updateWindowURL();
-                    //    }
-                    //    wviz.requestRender();
-                    //});
+            wviz.pick(p.x, p.y, function(x,y,z) {
+                center.position.set(x,y,z);
+                if (permalink) {
+                    permalink.set("center", [x,y,z]);
+                    permalink.updateWindowURL();
+                }
+                wviz.requestRender();
+            });
         },
         mouseDrag: function(p, dp, button) {
             // Note: the axis of rotation for a mouse displacement of (dp.x,dp.y) would
@@ -130,12 +130,11 @@ wviz.addListener("launched", function(e) {
             if (t < 150) {
                 if (event.shiftKey && event.button === 0) {
                     // shift-left-click event
-                    //wviz.pick(p.x, p.y, function(x,y,z) {
-                    //    var ij = wviz.m.xy_to_ij([x,y]);
-                    //    wviz.drop.clearTrail();
-                    //    wviz.drop.moveToIJ(ij[0], ij[1]);
-                    //    wviz.requestRender();
-                    //});
+                    wviz.pick(p.x, p.y, function(x,y,z) {
+                        var uv = wviz.m.xy_to_uv([x,y]);
+                        wviz.drop.moveToUV(uv[0], uv[1]);
+                        wviz.requestRender();
+                    });
                 }
                 if (event.ctrlKey && event.button === 0) {
                     // ctrl-left-click event
@@ -153,13 +152,13 @@ wviz.addListener("launched", function(e) {
         mouseWheel: function(delta, p) {
             var s;
             if (state.scaleTarget === "world") {
-                //wviz.pick(p.x, p.y, function(x,y,z) {
-                //    center.position.set(x,y,z);
-                //    if (permalink) {
-                //        permalink.set("center", [x,y,z]);
-                //        permalink.updateWindowURL();
-                //    }
-                //});
+                wviz.pick(p.x, p.y, function(x,y,z) {
+                    center.position.set(x,y,z);
+                    if (permalink) {
+                        permalink.set("center", [x,y,z]);
+                        permalink.updateWindowURL();
+                    }
+                });
                 s = Math.exp(delta/20.0);
                 var R = new THREE.Matrix4().makeScale(s,s,s);
                 var M = EventTracker.computeTransform(moving,center,frame, R);

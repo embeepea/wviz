@@ -43,101 +43,162 @@ module.exports = function(state) {
             }
         },
 
-//        {
-//            seq: "at",
-//            action: function() {
-//                state.visible["d3"] = !state.visible["d3"];
-//                state.wviz.set3D(state.visible["d3"]);
-//                state.permalink.set("d3", state.visible["d3"]);
-//                state.permalink.updateWindowURL();
-//                state.wviz.requestRender();
-//            },
-//            msgfunc: function() { return "3D " + (state.wviz.d3.state.visible ? "on" : "off"); },
-//            permalink: {
-//                key: "d3",
-//                urlKey: "d3",
-//                default: null,
-//                parse: parseUtils.parseBoolean,
-//                toString: parseUtils.booleanToString,
-//                setState: state.wviz.set3D
-//            }
-//        },
-//        {
-//            seq: "ar",
-//            action: function() {
-//                state.visible["d2"] = !state.visible["d2"];
-//                state.wviz.set2D(state.visible["d2"]);
-//                state.permalink.set("d2", state.visible["d2"]);
-//                state.permalink.updateWindowURL();
-//                state.wviz.requestRender();
-//            },
-//            msgfunc: function() { return "2D " + (state.wviz.d2.state.visible ? "on" : "off"); },
-//            permalink: {
-//                key: "d2",
-//                urlKey: "d2",
-//                default: state.visible["d2"],
-//                parse: parseUtils.parseBoolean,
-//                toString: parseUtils.booleanToString,
-//                setState: state.wviz.set2D
-//            }
-//        },
-//        {
-//            seq: "ae",
-//            action: function() {
-//                state.visible["edges"] = !state.visible["edges"];
-//                state.wviz.setEdges(state.visible["edges"]);
-//                state.permalink.set("edges", state.visible["edges"]);
-//                state.permalink.updateWindowURL();
-//                state.wviz.requestRender();
-//            },
-//            msgfunc: function() { return "edges " + (state.wviz.edges.state.visible ? "on" : "off"); },
-//            permalink: {
-//                key: "edges",
-//                urlKey: "ae",
-//                default: null,
-//                parse: parseUtils.parseBoolean,
-//                toString: parseUtils.booleanToString,
-//                setState: state.wviz.setEdges
-//            }
-//        },
-//        {
-//            seq: "af",
-//            action: function() {
-//                state.visible["faces"] = !state.visible["faces"];
-//                state.wviz.setFaces(state.visible["faces"]);
-//                state.permalink.set("faces", state.visible["faces"]);
-//                state.permalink.updateWindowURL();
-//                state.wviz.requestRender();
-//            },
-//            msgfunc: function() { return "faces " + (state.wviz.faces.state.visible ? "on" : "off"); },
-//            permalink: {
-//                key: "faces",
-//                urlKey: "af",
-//                default: null,
-//                parse: parseUtils.parseBoolean,
-//                toString: parseUtils.booleanToString,
-//                setState: state.wviz.setFaces
-//            }
-//        },
-//        {
-//            seq: "ac",
-//            action: function() {
-//                state.visible["axes"] = !state.visible["axes"];
-//                state.wviz.setAxes(state.visible["axes"]);
-//                state.permalink.set("axes", state.visible["axes"]);
-//                state.permalink.updateWindowURL();
-//                state.wviz.requestRender();
-//            },
-//            msgfunc: function() { return "axes " + (state.wviz.axes.state.visible ? "on" : "off"); },
-//            permalink: {
-//                key: "axes",
-//                urlKey: "ac",
-//                default: null,
-//                parse: parseUtils.parseBoolean,
-//                toString: parseUtils.booleanToString,
-//                setState: state.wviz.setAxes
-//            }
-//        },
+        {
+            seq: "ae",
+            action: function() {
+                state.wviz.visible("gridLines", !state.wviz.visible("gridLines"));
+                state.permalink.set("gridLines", state.wviz.visible("gridLines"));
+                state.permalink.updateWindowURL();
+                state.wviz.requestRender();
+            },
+            msgfunc: function() { return "3D " + (state.wviz.visible("gridLines") ? "on" : "off"); },
+            permalink: {
+                key: "gridLines",
+                urlKey: "ae",
+                default: null,
+                parse: parseUtils.parseBoolean,
+                toString: parseUtils.booleanToString,
+                setState: function(v) { state.wviz.visible("gridLines",v); }
+            }
+        },
+
+        {
+            seq: "ap",
+            action: function() {
+                state.wviz.visible("gridPoints", !state.wviz.visible("gridPoints"));
+                state.permalink.set("gridPoints", state.wviz.visible("gridPoints"));
+                state.permalink.updateWindowURL();
+                state.wviz.requestRender();
+            },
+            msgfunc: function() { return "3D " + (state.wviz.visible("gridPoints") ? "on" : "off"); },
+            permalink: {
+                key: "gridPoints",
+                urlKey: "ap",
+                default: null,
+                parse: parseUtils.parseBoolean,
+                toString: parseUtils.booleanToString,
+                setState: function(v) { state.wviz.visible("gridPoints",v); }
+            }
+        },
+        {
+            seq: "af",
+            action: function() {
+                state.wviz.visible("faces", !state.wviz.visible("faces"));
+                state.permalink.set("faces", state.wviz.visible("faces"));
+                state.permalink.updateWindowURL();
+                state.wviz.requestRender();
+            },
+            msgfunc: function() { return "faces " + (state.wviz.visible("faces") ? "on" : "off"); },
+            permalink: {
+                key: "faces",
+                urlKey: "af",
+                default: null,
+                parse: parseUtils.parseBoolean,
+                toString: parseUtils.booleanToString,
+                setState: function(v) { state.wviz.visible("faces",v); }
+            }
+        },
+        {
+            seq: "at",
+            action: function() {
+                state.wviz.visible("d3", !state.wviz.visible("d3"));
+                state.permalink.set("d3", state.wviz.visible("d3"));
+                state.permalink.updateWindowURL();
+                state.wviz.requestRender();
+            },
+            msgfunc: function() { return "3D " + (state.wviz.visible("d3") ? "on" : "off"); },
+            permalink: {
+                key: "d3",
+                urlKey: "d3",
+                default: null,
+                parse: parseUtils.parseBoolean,
+                toString: parseUtils.booleanToString,
+                setState: function(v) { state.wviz.visible("d3",v); }
+            }
+        },
+        {
+            seq: "ar",
+            action: function() {
+                state.wviz.visible("d2", !state.wviz.visible("d2"));
+                state.permalink.set("d2", state.wviz.visible("d2"));
+                state.permalink.updateWindowURL();
+                state.wviz.requestRender();
+            },
+            msgfunc: function() { return "2D " + (state.wviz.visible("d2") ? "on" : "off"); },
+            permalink: {
+                key: "d2",
+                urlKey: "d2",
+                default: null,
+                parse: parseUtils.parseBoolean,
+                toString: parseUtils.booleanToString,
+                setState: function(v) { state.wviz.visible("d2",v); }
+            }
+        },
+
+
+        {
+            seq: "t",
+            action: function() {
+                state.mouseDragMode = "translate";
+                state.permalink.set("dragMode", "translate");
+                state.permalink.updateWindowURL();
+            },
+            msgfunc: function() { return "translate"; },
+            permalink: {
+                key: "dragMode",
+                urlKey: "dm",
+                default: null,
+                parse: parseUtils.parseDragMode,
+                toString: parseUtils.dragModeToString,
+                setState: function(m) {
+                    state.mouseDragMode = parseUtils.parseDragMode(m);
+                }
+            }
+        },
+        {
+            seq: "r",
+            action: function() {
+                state.mouseDragMode = "rotate";
+                state.permalink.set("dragMode", "rotate");
+                state.permalink.updateWindowURL();
+            },
+            msgfunc: function() { return "rotate"; },
+            permalink: {
+                key: "dragMode",
+                urlKey: "dm",
+                default: null,
+                parse: parseUtils.parseDragMode,
+                toString: parseUtils.dragModeToString,
+                setState: function(m) {
+                    state.mouseDragMode = parseUtils.parseDragMode(m);
+                }
+            }
+        },
+        {
+            seq: "ac",
+            action: function() {
+                state.wviz.visible("axes", !state.wviz.visible("axes"));
+                state.permalink.set("axes", state.wviz.visible("axes"));
+                state.permalink.updateWindowURL();
+                state.wviz.requestRender();
+            },
+            msgfunc: function() { return "3D " + (state.wviz.visible("axes") ? "on" : "off"); },
+            permalink: {
+                key: "axes",
+                urlKey: "ac",
+                default: null,
+                parse: parseUtils.parseBoolean,
+                toString: parseUtils.booleanToString,
+                setState: function(v) { state.wviz.visible("axes",v); }
+            }
+        },
+
+        { seq: " ",
+          action: state.wviz.advanceDropOnce,
+          msgfunc: function() { return "advance once"; }
+        },
+
+
 //        {
 //            seq: "al",
 //            action: function() {
@@ -222,45 +283,6 @@ module.exports = function(state) {
 //                parse: parseUtils.parseIInt,
 //                toString: parseUtils.intToString,
 //                setState: state.wviz.setLineWidth
-//            }
-//        },
-//
-//        {
-//            seq: "t",
-//            action: function() {
-//                state.mouseDragMode = "translate";
-//                state.permalink.set("dragMode", "translate");
-//                state.permalink.updateWindowURL();
-//            },
-//            msgfunc: function() { return "translate"; },
-//            permalink: {
-//                key: "dragMode",
-//                urlKey: "dm",
-//                default: null,
-//                parse: parseUtils.parseDragMode,
-//                toString: parseUtils.dragModeToString,
-//                setState: function(m) {
-//                    state.mouseDragMode = parseUtils.parseDragMode(m);
-//                }
-//            }
-//        },
-//        {
-//            seq: "r",
-//            action: function() {
-//                state.mouseDragMode = "rotate";
-//                state.permalink.set("dragMode", "rotate");
-//                state.permalink.updateWindowURL();
-//            },
-//            msgfunc: function() { return "rotate"; },
-//            permalink: {
-//                key: "dragMode",
-//                urlKey: "dm",
-//                default: null,
-//                parse: parseUtils.parseDragMode,
-//                toString: parseUtils.dragModeToString,
-//                setState: function(m) {
-//                    state.mouseDragMode = parseUtils.parseDragMode(m);
-//                }
 //            }
 //        },
 //
