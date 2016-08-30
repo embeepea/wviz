@@ -7,6 +7,8 @@ var rain = require('./rain.js');
 var URL = require('./url.js');
 var event_emitter = require('./event_emitter.js');
 
+var ttest = require('./ttest.js');
+
 window.debug = require('./debug.js');
 
 var wviz = {};
@@ -61,19 +63,29 @@ wviz.settings = {
 window.wviz = wviz;
 
 wviz.setEdges = function(v) {
-    wviz.edges.visible = v;
+    if (wviz.edges) {
+        wviz.edges.visible = v;
+    }
 };
 wviz.setFaces = function(v) {
-    wviz.faces.visible = v;
+    if (wviz.faces) {
+        wviz.faces.visible = v;
+    }
 };
 wviz.setAxes = function(v) {
-    wviz.axes.visible = v;
+    if (wviz.axes) {
+        wviz.axes.visible = v;
+    }
 };
 wviz.setLattice = function(v) {
-    wviz.lattice.visible = v;
+    if (wviz.lattice) {
+        wviz.lattice.visible = v;
+    }
 };
 wviz.setLatticeArrows = function(v) {
-    wviz.latticeArrows.visible = v;
+    if (wviz.latticeArrows) {
+        wviz.latticeArrows.visible = v;
+    }
 };
 wviz.setIJ = function(ij) {
     if (ij) {
@@ -82,10 +94,14 @@ wviz.setIJ = function(ij) {
 };
 
 wviz.set2D = function(v) {
-    wviz.d2.visible = v;
+    if (wviz.d2) {
+        wviz.d2.visible = v;
+    }
 };
 wviz.set3D = function(v) {
-    wviz.d3.visible = v;
+    if (wviz.d3) {
+        wviz.d3.visible = v;
+    }
 };
 
 wviz.setLineWidth = function(a) {
@@ -649,7 +665,7 @@ wviz.launch = function(canvas, width, height, commands) {
             requestAnimationFrame( render );
         }
     };
-
+/*
     //var m = null;
     var loader = new THREE.FontLoader();
     loader.load( './libs/threejs/fonts/optimer_regular.typeface.json', function ( font ) {
@@ -680,7 +696,12 @@ wviz.launch = function(canvas, width, height, commands) {
         });
 
     });
-
+*/
+{
+    wviz.emit({type: "launched"});
+    ttest.ttest(wviz);
+    wviz.requestRender();
+}
 
     var raycaster = new THREE.Raycaster();
 
