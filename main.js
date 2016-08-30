@@ -6,7 +6,7 @@ var terrain = require('./terrain.js');
 var rain = require('./rain.js');
 var URL = require('./url.js');
 var kbd_processor = require('./kbd_processor.js');
-var wviz = require('./wviz.js');
+var wviz = require('./wviz2.js');
 var MultiPolygon = require('./MultiPolygon.js');
 var ui_commands = require('./ui_commands.js');
 var width, height, canvas;
@@ -67,13 +67,6 @@ function fadeMessage(msg) {
     });
 }
 
-wviz.addListener("ijset", function(e) {
-    if (permalink) {
-        permalink.set("ij", e.ij);
-        permalink.updateWindowURL();
-    }
-});
-
 var kp = kbd_processor(commands,
                        function(msg) {
                            displayMessage(msg);
@@ -91,15 +84,14 @@ wviz.addListener("launched", function(e) {
     var eventTracker = EventTracker.eventTracker(canvas, {
         mouseDown: function(p) {
             //console.log(p);
-                    wviz.pick(p.x, p.y, function(x,y,z) {
-                        center.position.set(x,y,z);
-                        if (permalink) {
-                            permalink.set("center", [x,y,z]);
-                            permalink.updateWindowURL();
-                        }
-                        wviz.requestRender();
-                    });
-
+                    //wviz.pick(p.x, p.y, function(x,y,z) {
+                    //    center.position.set(x,y,z);
+                    //    if (permalink) {
+                    //        permalink.set("center", [x,y,z]);
+                    //        permalink.updateWindowURL();
+                    //    }
+                    //    wviz.requestRender();
+                    //});
         },
         mouseDrag: function(p, dp, button) {
             // Note: the axis of rotation for a mouse displacement of (dp.x,dp.y) would
@@ -138,36 +130,36 @@ wviz.addListener("launched", function(e) {
             if (t < 150) {
                 if (event.shiftKey && event.button === 0) {
                     // shift-left-click event
-                    wviz.pick(p.x, p.y, function(x,y,z) {
-                        var ij = wviz.m.xy_to_ij([x,y]);
-                        wviz.drop.clearTrail();
-                        wviz.drop.moveToIJ(ij[0], ij[1]);
-                        wviz.requestRender();
-                    });
+                    //wviz.pick(p.x, p.y, function(x,y,z) {
+                    //    var ij = wviz.m.xy_to_ij([x,y]);
+                    //    wviz.drop.clearTrail();
+                    //    wviz.drop.moveToIJ(ij[0], ij[1]);
+                    //    wviz.requestRender();
+                    //});
                 }
                 if (event.ctrlKey && event.button === 0) {
                     // ctrl-left-click event
-                    wviz.pick(p.x, p.y, function(x,y,z) {
-                        center.position.set(x,y,z);
-                        if (permalink) {
-                            permalink.set("center", [x,y,z]);
-                            permalink.updateWindowURL();
-                        }
-                        wviz.requestRender();
-                    });
+                    //wviz.pick(p.x, p.y, function(x,y,z) {
+                    //    center.position.set(x,y,z);
+                    //    if (permalink) {
+                    //        permalink.set("center", [x,y,z]);
+                    //        permalink.updateWindowURL();
+                    //    }
+                    //    wviz.requestRender();
+                    //});
                 }
             }
         },
         mouseWheel: function(delta, p) {
             var s;
             if (state.scaleTarget === "world") {
-                wviz.pick(p.x, p.y, function(x,y,z) {
-                    center.position.set(x,y,z);
-                    if (permalink) {
-                        permalink.set("center", [x,y,z]);
-                        permalink.updateWindowURL();
-                    }
-                });
+                //wviz.pick(p.x, p.y, function(x,y,z) {
+                //    center.position.set(x,y,z);
+                //    if (permalink) {
+                //        permalink.set("center", [x,y,z]);
+                //        permalink.updateWindowURL();
+                //    }
+                //});
                 s = Math.exp(delta/20.0);
                 var R = new THREE.Matrix4().makeScale(s,s,s);
                 var M = EventTracker.computeTransform(moving,center,frame, R);
@@ -180,13 +172,13 @@ wviz.addListener("launched", function(e) {
                 wviz.requestRender();
             } else if (state.scaleTarget === "drop") {
                 s = Math.exp(delta/20.0);
-                wviz.settings.drop.radius *= s;
-                wviz.drop.setRadius(wviz.settings.drop.radius);
-                if (permalink) {
-                    permalink.set("dr", wviz.settings.drop.radius);
-                    permalink.updateWindowURL();
-                }
-                wviz.requestRender();
+                //wviz.settings.drop.radius *= s;
+                //wviz.drop.setRadius(wviz.settings.drop.radius);
+                //if (permalink) {
+                //    permalink.set("dr", wviz.settings.drop.radius);
+                //    permalink.updateWindowURL();
+                //}
+                //wviz.requestRender();
             }
         },
         keyPress: function(event) {
