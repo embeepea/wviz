@@ -6,7 +6,7 @@ var terrain = require('./terrain.js');
 var rain = require('./rain.js');
 var URL = require('./url.js');
 var kbd_processor = require('./kbd_processor.js');
-var wviz = require('./wviz2.js');
+var wviz = require('./wviz.js');
 var MultiPolygon = require('./MultiPolygon.js');
 var ui_commands = require('./ui_commands.js');
 var width, height, canvas;
