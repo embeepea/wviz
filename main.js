@@ -22,8 +22,8 @@ var state = {
         edges: false,
         faces: true,
         axes: false,
-        lattice: true,
-        latticeArrows: false,
+        base: true,
+        baseArrows: false,
         d2: false,
         d3: true
     }
@@ -32,8 +32,8 @@ var state = {
 //  wviz.setEdges(state.visible["edges"]);
 //  wviz.setFaces(state.visible["faces"]);
 //  wviz.setAxes(state.visible["axes"]);
-//  wviz.setLattice(state.visible["lattice"]);
-//  wviz.setLatticeArrows(state.visible["latticeArrows"]);
+//  wviz.setBase(state.visible["base"]);
+//  wviz.setBaseArrows(state.visible["baseArrows"]);
 //  wviz.set2D(state.visible["d2"]);
 //  wviz.set3D(state.visible["d3"]);
 

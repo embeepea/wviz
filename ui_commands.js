@@ -101,19 +101,19 @@ module.exports = function(state) {
         {
             seq: "aa",
             action: function() {
-                state.wviz.visible("latticeArrows", !state.wviz.visible("latticeArrows"));
-                state.permalink.set("latticeArrows", state.wviz.visible("latticeArrows"));
+                state.wviz.visible("baseArrows", !state.wviz.visible("baseArrows"));
+                state.permalink.set("baseArrows", state.wviz.visible("baseArrows"));
                 state.permalink.updateWindowURL();
                 state.wviz.requestRender();
             },
-            msgfunc: function() { return "arrows " + (state.wviz.visible("latticeArrows") ? "on" : "off"); },
+            msgfunc: function() { return "arrows " + (state.wviz.visible("baseArrows") ? "on" : "off"); },
             permalink: {
-                key: "latticeArrows",
+                key: "baseArrows",
                 urlKey: "aa",
                 default: null,
                 parse: parseUtils.parseBoolean,
                 toString: parseUtils.booleanToString,
-                setState: function(v) { state.wviz.visible("latticeArrows",v); }
+                setState: function(v) { state.wviz.visible("baseArrows",v); }
             }
         },
         {
@@ -336,39 +336,39 @@ module.exports = function(state) {
 //        {
 //            seq: "al",
 //            action: function() {
-//                state.visible["lattice"] = !state.visible["lattice"];
-//                state.wviz.setLattice(state.visible["lattice"]);
-//                state.permalink.set("lattice", state.visible["lattice"]);
+//                state.visible["base"] = !state.visible["base"];
+//                state.wviz.setBase(state.visible["base"]);
+//                state.permalink.set("base", state.visible["base"]);
 //                state.permalink.updateWindowURL();
 //                state.wviz.requestRender();
 //            },
-//            msgfunc: function() { return "lattice " + (state.wviz.lattice.state.visible ? "on" : "off"); },
+//            msgfunc: function() { return "base " + (state.wviz.base.state.visible ? "on" : "off"); },
 //            permalink: {
-//                key: "lattice",
+//                key: "base",
 //                urlKey: "al",
 //                default: null,
 //                parse: parseUtils.parseBoolean,
 //                toString: parseUtils.booleanToString,
-//                setState: state.wviz.setLattice
+//                setState: state.wviz.setBase
 //            }
 //        },
 //        {
 //            seq: "aa",
 //            action: function() {
-//                state.visible["latticeArrows"] = !state.visible["latticeArrows"];
-//                state.wviz.setLatticeArrows(state.visible["latticeArrows"]);
-//                state.permalink.set("latticeArrows", state.visible["latticeArrows"]);
+//                state.visible["baseArrows"] = !state.visible["baseArrows"];
+//                state.wviz.setBaseArrows(state.visible["baseArrows"]);
+//                state.permalink.set("baseArrows", state.visible["baseArrows"]);
 //                state.permalink.updateWindowURL();
 //                state.wviz.requestRender();
 //            },
-//            msgfunc: function() { return "lattice arrows " + (state.wviz.latticeArrows.state.visible ? "on" : "off"); },
+//            msgfunc: function() { return "base arrows " + (state.wviz.baseArrows.state.visible ? "on" : "off"); },
 //            permalink: {
-//                key: "latticeArrows",
+//                key: "baseArrows",
 //                urlKey: "aa",
 //                default: null,
 //                parse: parseUtils.parseBoolean,
 //                toString: parseUtils.booleanToString,
-//                setState: state.wviz.setLatticeArrows
+//                setState: state.wviz.setBaseArrows
 //            }
 //        },
 //        {
