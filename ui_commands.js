@@ -99,6 +99,24 @@ module.exports = function(state) {
             }
         },
         {
+            seq: "aa",
+            action: function() {
+                state.wviz.visible("latticeArrows", !state.wviz.visible("latticeArrows"));
+                state.permalink.set("latticeArrows", state.wviz.visible("latticeArrows"));
+                state.permalink.updateWindowURL();
+                state.wviz.requestRender();
+            },
+            msgfunc: function() { return "arrows " + (state.wviz.visible("latticeArrows") ? "on" : "off"); },
+            permalink: {
+                key: "latticeArrows",
+                urlKey: "aa",
+                default: null,
+                parse: parseUtils.parseBoolean,
+                toString: parseUtils.booleanToString,
+                setState: function(v) { state.wviz.visible("latticeArrows",v); }
+            }
+        },
+        {
             seq: "at",
             action: function() {
                 state.wviz.visible("d3", !state.wviz.visible("d3"));

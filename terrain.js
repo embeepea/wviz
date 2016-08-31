@@ -42,13 +42,50 @@ function load(meshURL, settings, callback) {
             geom.computeFaceNormals();
             geom.computeVertexNormals();
 
+            var latticeArrowGeom = new THREE.Geometry();
+            var g = 0.02;
+            var a = 0.020;
+            var b = 0.010;
+            var c = 0.003;
+            var k = 0;
+            var zL = settings.terrain.latticeZ + 0.001;
+            for (u=0; u<m.Nu; ++u) {
+                for (v=0; v<m.Nv; ++v) {
+                    var nuv = m.flow[u][v];
+                    if (nuv !== null) {
+                        xy = m.uv_to_xy([u,v]);
+                        var nxy = m.uv_to_xy(nuv);
+                        var ar = arrow.garrow([xy[0],xy[1]], [nxy[0],nxy[1]], g, a, b, c);
+                        ar.headFaces.forEach(function(p) {
+                            latticeArrowGeom.vertices.push(new THREE.Vector3(p[0][0],p[0][1],zL),
+                                                               new THREE.Vector3(p[1][0],p[1][1],zL),
+                                                               new THREE.Vector3(p[2][0],p[2][1],zL));
+                            latticeArrowGeom.faces.push(new THREE.Face3(k, k+1, k+2));
+                            k += 3;
+                        });
+                        ar.shaftFaces.forEach(function(p) {
+                            latticeArrowGeom.vertices.push(new THREE.Vector3(p[0][0],p[0][1],zL),
+                                                               new THREE.Vector3(p[1][0],p[1][1],zL),
+                                                               new THREE.Vector3(p[2][0],p[2][1],zL));
+                            latticeArrowGeom.faces.push(new THREE.Face3(k, k+1, k+2));
+                            k += 3;
+                        });
+                    }
+                }
+            }
+            var latticeArrowObj = new THREE.Object3D();
+            var arrowMat = new THREE.MeshBasicMaterial( {
+                color: 0x000000,
+                side: THREE.DoubleSide
+            });
+            latticeArrowObj.add(new THREE.Mesh(latticeArrowGeom, arrowMat));
+
             var terrainTextureContext =
                     TextureCanvas.TextureCanvas(settings.terrain.txSize,
                                                 settings.terrain.txSize,
                                                 m.xMin, m.xMax, m.yMin, m.yMax);
             var terrainMat = new THREE.MeshPhongMaterial( {
                 map: terrainTextureContext.texture,
-                //color: settings.terrain.diffuseColor,
                 side: THREE.DoubleSide,
                 shading: THREE.SmoothShading
             });
@@ -86,6 +123,7 @@ function load(meshURL, settings, callback) {
             callback({
                 faces: new THREE.Mesh( geom, terrainMat ),
                 latticeQuad: quadMesh,
+                latticeArrows: latticeArrowObj,
                 m: m,
                 terrainTextureContext: terrainTextureContext,
                 flatTextureContext: flatTextureContext

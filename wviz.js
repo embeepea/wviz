@@ -97,7 +97,8 @@ wviz._visible = {
     faces: true,
     d3: true,
     d2: false,
-    axes: false
+    axes: false,
+    latticeArrows: false
 };
 
 function renderTexture() {
@@ -270,6 +271,8 @@ wviz.visible = function(what, v) {
             wviz.d2.visible = v;
         } else if (what === "axes") {
             wviz.axes.visible = v;
+        } else if (what === "latticeArrows") {
+            wviz.latticeArrows.visible = v;
         }
     }
     return wviz._visible[what];
@@ -588,6 +591,9 @@ wviz.launch = function(canvas, width, height, commands) {
         });
         wviz.d3.add( wviz.yellowDrop.terrainDropObj );
         wviz.d2.add( wviz.yellowDrop.flatDropObj );
+
+        wviz.d2.add(t.latticeArrows);
+        wviz.latticeArrows = t.latticeArrows;
 
         renderTexture();
 
