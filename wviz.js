@@ -4,6 +4,7 @@ var EventTracker = require('./EventTracker.js');
 var event_emitter = require('./event_emitter.js');
 var axes = require('./axes.js');
 var terrain = require('./terrain.js');
+var upstream = require('./upstream.js');
 
 var wviz = {};
 window.wviz = wviz;
@@ -103,6 +104,12 @@ function renderTexture() {
     txClear(wviz.terrainTextureContext);
     txClear(wviz.flatTextureContext);
 
+    txDrawUpstreamMultiPolygons(wviz.terrainTextureContext);
+    txDrawUpstreamMultiPolygons(wviz.flatTextureContext);
+
+    txDrawUpstreamMultiPolygonBoundaries(wviz.terrainTextureContext);
+    txDrawUpstreamMultiPolygonBoundaries(wviz.flatTextureContext);
+
     if (wviz._visible.gridPoints) {
         txDrawGridPoints(wviz.terrainTextureContext);
         txDrawGridPoints(wviz.flatTextureContext);
@@ -111,6 +118,7 @@ function renderTexture() {
         txDrawGridLines(wviz.terrainTextureContext);
         txDrawGridLines(wviz.flatTextureContext);
     }
+
     //if (wviz.blueDrop && wviz.blueDrop.uv) {
     //    wviz.blueDrop.txRenderTrail(wviz.terrainTextureContext);
     //    wviz.blueDrop.txRenderTrail(wviz.flatTextureContext);
@@ -290,13 +298,6 @@ function createCamera(width, height) {
     return camera;
 }
 
-//terrainDropColor: 0x3333ff
-//terrainDropRadius: wviz.settings.drop.radius
-//flatDropColor: 0x3333ff
-//flatDropInnerRadius: 0.015
-//flatDropOuterRadius: 0.045
-// latticeZOffset: 0.001
-//eventType: "uvset"
 function makeDrop(m, options) {
     var geometry = new THREE.SphereGeometry( 1, 16, 16 );
     var sphereDropMat = new THREE.MeshPhongMaterial({
@@ -409,6 +410,7 @@ function makeDrop(m, options) {
             }
         },
         moveToUV: function(u,v) {
+            this.uv = [u,v];
             var xy = m.uv_to_xy([u,v]);
             var x = xy[0];
             var y = xy[1];
@@ -580,7 +582,7 @@ wviz.launch = function(canvas, width, height, commands) {
             terrainDropRadius: 1.5*wviz.settings.drop.radius,
             flatDropColor: 0xcccc00,
             flatDropInnerRadius: 0.015,
-            flatDropOuterRadius: 0.065,
+            flatDropOuterRadius: 0.1,
             latticeZOffset: 0.0015,
             eventType: "yuvset"
         });
@@ -607,6 +609,81 @@ wviz.setYellowUV = function(uv) {
     if (uv) {
         wviz.yellowDrop.moveToUV(uv[0], uv[1]);
     }
+};
+
+function txDrawUpstreamMultiPolygons(ctx) {
+    if (wviz.upstreamMultiPolygons) {
+        wviz.upstreamMultiPolygons.forEach(function(mp) {
+            var bdy = mp.bdy();
+            bdy.polylines.forEach(function(pl) {
+                if (pl.length > 2) {
+                    ctx.fillStyle("#ff0000");
+                    ctx.beginPath();
+                    ctx.moveTo(pl[0][0], pl[0][1]);
+                    pl.slice(1).forEach(function(p) {
+                        ctx.lineTo(p[0], p[1]);
+                    });
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            });
+        });
+    }
+//    if (wviz.upstreamMultiPolygons) {
+//        wviz.upstreamMultiPolygons.forEach(function(mp) {
+//            var p = mp.polygons();
+//            p.faces.forEach(function(vi) {
+//                if (vi.length > 2) {
+//                    ctx.fillStyle("#ff0000");
+//                    ctx.beginPath();
+//                    ctx.moveTo(p.vertices[vi[0]][0], p.vertices[vi[0]][1]);
+//                    vi.slice(1).forEach(function(i) {
+//                        ctx.lineTo(p.vertices[i][0], p.vertices[i][1]);
+//                    });
+//                    ctx.closePath();
+//                    ctx.fill();
+//                }
+//            });
+//        });
+//    }
+}
+
+function txDrawUpstreamMultiPolygonBoundaries(ctx) {
+    if (wviz.upstreamMultiPolygons) {
+        wviz.upstreamMultiPolygons.forEach(function(mp) {
+            var bdy = mp.bdy();
+            bdy.polylines.forEach(function(pl) {
+                if (pl.length > 2) {
+                    ctx.strokeStyle("#000000");
+                    ctx.lineWidth(4);
+                    ctx.beginPath();
+                    ctx.moveTo(pl[0][0], pl[0][1]);
+                    pl.slice(1).forEach(function(p) {
+                        ctx.lineTo(p[0], p[1]);
+                    });
+                    ctx.closePath();
+                    ctx.stroke();
+                }
+            });
+        });
+    }
+}
+
+
+wviz.clearUpstreamAreas = function() {
+    wviz.upstreamMultiPolygons = [];
+};
+
+wviz.addCurrentYellowDropUpstreamArea = function() {
+    if (wviz.yellowDrop.terrainDropObj.visible) {
+        var upoints = upstream.upStreamPoints(wviz.yellowDrop.uv, wviz.m);
+        var mp = upstream.multiPolygonFromPoints(upoints, wviz.m, 0);
+        if (!("upstreamMultiPolygons" in wviz)) {
+            wviz.upstreamMultiPolygons = [];
+        }
+        wviz.upstreamMultiPolygons.push(mp);
+    }
+    wviz.textureNeedsRendering = true;
 };
 
 module.exports = wviz;

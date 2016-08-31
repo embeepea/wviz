@@ -18,11 +18,6 @@ var MultiPolygon = require('./MultiPolygon.js');
 //    wviz.d3.add(wviz.upst);
 //}
 
-//    var upoints = upStreamPoints(uv, wviz.m);
-//    var mp = multiPolygonFromPoints(upoints, wviz.m, zOffset);
-// 
-
-
 function upStreamPoints(uv, m) {
     var points = [];
     var marked = {};

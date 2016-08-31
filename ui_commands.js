@@ -273,6 +273,22 @@ module.exports = function(state) {
           }
         },
 
+        { seq: "uu",
+          action: function() {
+              state.wviz.addCurrentYellowDropUpstreamArea();
+              state.wviz.requestRender();
+          },
+          msgfunc: function() { return "add upstream"; }
+        },
+
+        { seq: "uc",
+          action: function() {
+              state.wviz.clearUpstreamAreas();
+              state.wviz.requestRender();
+          },
+          msgfunc: function() { return "clear upstreams"; }
+        },
+
 
 //        {
 //            seq: "al",
