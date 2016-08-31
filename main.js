@@ -132,6 +132,7 @@ wviz.addListener("launched", function(e) {
                     // shift-left-click event
                     wviz.pick(p.x, p.y, function(x,y,z) {
                         var uv = wviz.m.xy_to_uv([x,y]);
+                        wviz.drop.clearTrail();
                         wviz.drop.moveToUV(uv[0], uv[1]);
                         wviz.requestRender();
                     });

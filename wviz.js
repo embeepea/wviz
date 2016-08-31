@@ -10,6 +10,7 @@ window.wviz = wviz;
 
 wviz.settings = {
     backgroundColor: 0xffffff,
+    edgeZNudge: 0.01,
     terrain: {
         //txSize: 1024,
         txSize: 2048,
@@ -38,7 +39,9 @@ wviz.settings = {
     },
     drop: {
         radius: 0.1,
-        fallSpeed: 100
+        fallSpeed: 100,
+        trailColor: "#0000ff",
+        trailLineWidth: 8
     }
 };
 
@@ -93,7 +96,7 @@ wviz._visible = {
     faces: true,
     d3: true,
     d2: false,
-    axes: true
+    axes: false
 };
 
 function renderTexture() {
@@ -108,6 +111,10 @@ function renderTexture() {
         txDrawGridLines(wviz.terrainTextureContext);
         txDrawGridLines(wviz.flatTextureContext);
     }
+    //if (wviz.drop && wviz.drop.uv) {
+    //    wviz.drop.txRenderTrail(wviz.terrainTextureContext);
+    //    wviz.drop.txRenderTrail(wviz.flatTextureContext);
+    //}
 }
 
 wviz.advanceDropOnce = function(a) {
@@ -179,18 +186,126 @@ function makeDrop(m) {
     spherePositionObj.add(sphereScaleObj);
     spherePositionObj.visible = false;
 
+    var flatDropMat = new THREE.MeshBasicMaterial({
+        color: 0x3333ff,
+        side: THREE.DoubleSide
+    });
+
+    function addCircle(geom,x,y,r,n,z) {
+        var a = Math.PI/4;
+        var da = 2*Math.PI/n;
+        var ps = [];
+        var i;
+        var k = geom.vertices.length;
+        for (i=0; i<n; ++i) {
+            geom.vertices.push(new THREE.Vector3(x+r*Math.cos(a),y+r*Math.sin(a),z));
+            a += da;
+            geom.vertices.push(new THREE.Vector3(x+r*Math.cos(a),y+r*Math.sin(a),z));
+        }
+    }
+
+    function addAnnulus(geom,x,y,r0,r1,n,z) {
+        var a = Math.PI/4;
+        var da = 2*Math.PI/n;
+        var ps = [];
+        var i;
+        var k = geom.vertices.length;
+        var n2 = 2*n;
+        for (i=0; i<n; ++i) {
+            geom.vertices.push(new THREE.Vector3(x+r0*Math.cos(a),y+r0*Math.sin(a),z));
+            geom.vertices.push(new THREE.Vector3(x+r1*Math.cos(a),y+r1*Math.sin(a),z));
+            a += da;
+            geom.faces.push(new THREE.Face3((k  )%n2, (k+1)%n2, (k+2)%n2),
+                            new THREE.Face3((k+2)%n2, (k+1)%n2, (k+3)%n2));
+            k += 2;
+        }
+        geom.computeFaceNormals();
+        geom.computeVertexNormals();
+    }
+
+    var circlePositionObj = new THREE.Object3D();
+    circlePositionObj.visible = false;
+    var circleGeom = new THREE.Geometry();
+    addAnnulus(circleGeom, 0, 0, 0.015, 0.045, 12, 0);
+    var circleScaleObj = new THREE.Mesh(circleGeom, flatDropMat);
+    circlePositionObj.add(circleScaleObj);
+    circlePositionObj.visible = false;
+
+    var flatDropObj = new THREE.Object3D();
+    flatDropObj.add(circlePositionObj);
+    flatDropObj.visible = true;
+    var trailMat = new THREE.LineBasicMaterial({
+        color: 0x0000ff,
+        linewidth: wviz.settings.drop.trailLineWidth
+    });
+    var trailXY = [];
+    var lastTrailPoint = null;
+    var flatTrailZ = wviz.settings.terrain.latticeZ+0.001;
+    var terrainTrailObj = new THREE.Object3D();
+    var flatTrailObj = new THREE.Object3D();
+    var terrainTrailTObj = new THREE.Object3D();
+    var flatTrailTObj = new THREE.Object3D();
+    terrainTrailTObj.add(terrainTrailObj);
+    flatTrailTObj.add(flatTrailObj);
+
     return {
         terrainDropObj: spherePositionObj,
+        flatDropObj: circlePositionObj,
+        terrainTrailTObj: terrainTrailTObj,
+        flatTrailTObj: flatTrailTObj,
         uv: null,
+        clearTrail: function() {
+            trailXY = [];
+            terrainTrailTObj.remove(terrainTrailObj);
+            flatTrailTObj.remove(flatTrailObj);
+            terrainTrailObj = new THREE.Object3D();
+            flatTrailObj = new THREE.Object3D();
+            terrainTrailTObj.add(terrainTrailObj);
+            flatTrailTObj.add(flatTrailObj);
+            lastTrailPoint = null;
+
+        },
+        txRenderTrail: function(ctx) {
+            if (trailXY.length > 0) {
+                ctx.strokeStyle(wviz.settings.drop.trailColor);
+                ctx.lineWidth(wviz.settings.drop.trailLineWidth);
+                ctx.beginPath();
+                ctx.moveTo(trailXY[0][0], trailXY[0][1]);
+                var i;
+                for (i=1; i<trailXY.length; ++i) {
+                    ctx.lineTo(trailXY[i][0], trailXY[i][1]);
+                }
+                ctx.stroke();
+            }
+        },
         moveToUV: function(u,v) {
             var xy = m.uv_to_xy([u,v]);
             var x = xy[0];
             var y = xy[1];
+            trailXY.push(xy);
             var z = m.meshData[u][v]+wviz.settings.drop.radius;
             wviz.drop.uv = [u,v];
             this.uv = [u,v];
             spherePositionObj.visible = true;
             spherePositionObj.position.set(x,y,z);
+            circlePositionObj.visible = true;
+            circlePositionObj.position.set(x,y,flatTrailZ);
+            //wviz.textureNeedsRendering = true;
+            if (lastTrailPoint) {
+                var terrainTrailGeom = new THREE.Geometry();
+                var flatTrailGeom = new THREE.Geometry();
+                terrainTrailGeom.vertices.push(new THREE.Vector3(lastTrailPoint[0],
+                                                                 lastTrailPoint[1],
+                                                                 lastTrailPoint[2]));
+                terrainTrailGeom.vertices.push(new THREE.Vector3(x, y, m.meshData[u][v]));
+                terrainTrailObj.add(new THREE.LineSegments(terrainTrailGeom, trailMat));
+                flatTrailGeom.vertices.push(new THREE.Vector3(lastTrailPoint[0],
+                                                              lastTrailPoint[1],
+                                                              flatTrailZ));
+                flatTrailGeom.vertices.push(new THREE.Vector3(x, y, flatTrailZ));
+                flatTrailObj.add(new THREE.LineSegments(flatTrailGeom, trailMat));
+            }
+            lastTrailPoint = [x,y,m.meshData[u][v]];
             wviz.emit({type: "uvset", uv: [u,v]});
         },
         setRadius: function(r) {
@@ -217,6 +332,15 @@ wviz.launch = function(canvas, width, height, commands) {
     wviz.world.add(wviz.d2);
     wviz.world.add(wviz.d3);
     wviz.world.matrixAutoUpdate = false;
+
+
+    var zNudged3DEdges = new THREE.Object3D();
+    var zNudged2DEdges = new THREE.Object3D();
+    zNudged3DEdges.matrixAutoUpdate = false;
+    zNudged2DEdges.matrixAutoUpdate = false;
+    wviz.d3.add(zNudged3DEdges);
+    wviz.d2.add(zNudged2DEdges);
+
     wviz.axes = axes.axes3D({
         length: 0.75,
         tipRadius: 0.05,
@@ -237,6 +361,11 @@ wviz.launch = function(canvas, width, height, commands) {
     });
 
     function render() {
+        var T = new THREE.Matrix4().makeTranslation(0, 0, wviz.settings.edgeZNudge);
+        zNudged3DEdges.matrix = EventTracker.computeTransform(zNudged3DEdges,camera,camera, T);
+        zNudged3DEdges.matrixWorldNeedsUpdate = true;
+        zNudged2DEdges.matrix = EventTracker.computeTransform(zNudged2DEdges,camera,camera, T);
+        zNudged2DEdges.matrixWorldNeedsUpdate = true;
         if (wviz.textureNeedsRendering) {
             renderTexture();
             wviz.textureNeedsRendering = false;
@@ -303,6 +432,9 @@ wviz.launch = function(canvas, width, height, commands) {
 
         wviz.drop = makeDrop(wviz.m);
         wviz.d3.add( wviz.drop.terrainDropObj );
+        wviz.d2.add( wviz.drop.flatDropObj );
+        zNudged3DEdges.add( wviz.drop.terrainTrailTObj );
+        zNudged2DEdges.add( wviz.drop.flatTrailTObj );
 
         renderTexture();
 

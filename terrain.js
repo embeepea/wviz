@@ -17,7 +17,7 @@ function load(meshURL, settings, callback) {
                 for (u=0; u<m.Nu; ++u) {
                     xy = m.uv_to_xy([u,v]);
                     geom.vertices.push(new THREE.Vector3(xy[0], xy[1], m.meshData[u][v]));
-                    tuv = [u/(m.Nu-1), v/(m.Nv-1)];
+                    tuv = [u/(m.Nu-1), 1-v/(m.Nv-1)];
                     uvs.push(new THREE.Vector2(tuv[0], tuv[1]));
                 }
             }
@@ -65,10 +65,10 @@ function load(meshURL, settings, callback) {
             quadGeom.faces.push(new THREE.Face3(0,1,2));
             quadGeom.faces.push(new THREE.Face3(0,2,3));
             uvs = [
-                new THREE.Vector2(0,0),
                 new THREE.Vector2(0,1),
-                new THREE.Vector2(1,1),
-                new THREE.Vector2(1,0)
+                new THREE.Vector2(0,0),
+                new THREE.Vector2(1,0),
+                new THREE.Vector2(1,1)
             ];
             quadGeom.faceVertexUvs[0] = [];
             quadGeom.faceVertexUvs[0].push([uvs[0], uvs[1], uvs[2]]);
