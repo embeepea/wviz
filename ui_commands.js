@@ -307,6 +307,31 @@ module.exports = function(state) {
           msgfunc: function() { return "clear upstreams"; }
         },
 
+        { seq: "x",
+          action: function() {
+              if (state.wviz.text) {
+                  state.wviz.hideText();
+              } else {
+                  state.wviz.showText();
+              }
+              state.permalink.set("text", !!state.wviz.text);
+              state.permalink.updateWindowURL();
+          },
+          msgfunc: function() { return "toggle text"; },
+          permalink: {
+              key: "text",
+              urlKey: "x",
+              default: null,
+              parse: parseUtils.parseBoolean,
+              toString: parseUtils.booleanToString,
+              setState: function(v) {
+                  if (v) {
+                      state.wviz.showText();
+                  }
+              }
+          }
+        },
+
 
 //        {
 //            seq: "al",

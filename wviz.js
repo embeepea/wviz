@@ -215,6 +215,48 @@ function makeNeighborHeightLines() {
     return lines;
 }
 
+function makeNeighborText() {
+    if (!wviz.blueDrop || !wviz.blueDrop.uv) { return null; }
+    var textObj = new THREE.Object3D();
+    var mat = new THREE.MeshBasicMaterial( {
+        color: 0x000000
+    });
+    var textOptions = {
+        // font — THREE.Font.
+        font: wviz.fonts.optimer,
+        // size — Float. Size of the text.
+        size: 0.01,
+        // height — Float. Thickness to extrude text. Default is 50.
+        height: 0.0,
+        // curveSegments — Integer. Number of points on the curves. Default is 12.
+        curveSegments: 2,
+        // bevelEnabled — Boolean. Turn on bevel. Default is False.
+        // bevelThickness — Float. How deep into text bevel goes. Default is 10.
+        bevelThickness: 0,
+        // bevelSize — Float. How far from text outline is bevel. Default is 8.
+        bevelSize: 0
+    };
+    var u,v;
+    var R = 5;
+    for (u=wviz.blueDrop.uv[0]-R; u<=wviz.blueDrop.uv[0]+R; ++u) {
+        for (v=wviz.blueDrop.uv[1]-R; v<=wviz.blueDrop.uv[1]+R; ++v) {
+            if (wviz.m.inRange([u,v])) {
+                var xy = wviz.m.uv_to_xy([u,v]);
+                var oneTextObj = new THREE.Object3D();
+                var textGeom = new THREE.TextGeometry(sprintf("%.3f", wviz.m.meshData[u][v]),
+                                                      textOptions);
+                var textMesh = new THREE.Mesh(textGeom, mat);
+                oneTextObj.add(textMesh);
+                oneTextObj.position.set(xy[0] + textOptions.size,
+                                        xy[1] + textOptions.size,
+                                        wviz.settings.terrain.latticeZ+0.004);
+                textObj.add(oneTextObj);
+            }
+        }
+    }
+    return textObj;
+}
+
 wviz.showNeighborPoints = function() {
     wviz.hideNeighborPoints();
     wviz.neighborPoints = makeNeighborPoints();
@@ -243,6 +285,21 @@ wviz.hideHeightLines = function() {
         wviz.d3.remove(wviz.heightLines);
     }
     wviz.heightLines = null;
+    wviz.requestRender();
+};
+
+wviz.showText = function() {
+    wviz.hideText();
+    wviz.text = makeNeighborText();
+    wviz.d2.add(wviz.text);
+    wviz.requestRender();
+};
+
+wviz.hideText = function() {
+    if (wviz.text) {
+        wviz.d2.remove(wviz.text);
+    }
+    wviz.text = null;
     wviz.requestRender();
 };
 
@@ -549,59 +606,62 @@ wviz.launch = function(canvas, width, height, commands) {
         }
     };
 
-    terrain.load('./data/dem3.mesh', wviz.settings, function(t) {
-    //terrain.load('./data/smallmesh32x32.mesh', wviz.settings, function(t) {
-        wviz.m = t.m;
+    wviz.fonts = {};
+    var loader = new THREE.FontLoader();
+    loader.load( './libs/threejs/fonts/optimer_regular.typeface.json', function ( font ) {
+        wviz.fonts.optimer = font;
+        terrain.load('./data/dem3.mesh', wviz.settings, function(t) {
+            //terrain.load('./data/smallmesh32x32.mesh', wviz.settings, function(t) {
+            wviz.m = t.m;
 
-        wviz.faces = t.faces;
-        wviz.faces.visible = wviz._visible.faces;
-        wviz.d3.add(t.faces);
-        wviz.faces.pickable = true;
+            wviz.faces = t.faces;
+            wviz.faces.visible = wviz._visible.faces;
+            wviz.d3.add(t.faces);
+            wviz.faces.pickable = true;
 
-        wviz.latticeQuad = t.latticeQuad;
-        wviz.latticeQuad.visible = wviz._visible.latticeQuad;
-        wviz.d2.add(t.latticeQuad);
-        wviz.latticeQuad.pickable = true;
+            wviz.latticeQuad = t.latticeQuad;
+            wviz.latticeQuad.visible = wviz._visible.latticeQuad;
+            wviz.d2.add(t.latticeQuad);
+            wviz.latticeQuad.pickable = true;
 
-        wviz.terrainTextureContext = t.terrainTextureContext;
-        wviz.flatTextureContext = t.flatTextureContext;
+            wviz.terrainTextureContext = t.terrainTextureContext;
+            wviz.flatTextureContext = t.flatTextureContext;
 
-        wviz.blueDrop = makeDrop(wviz.m, {
-            terrainDropColor: 0x3333ff,
-            terrainDropRadius: wviz.settings.drop.radius,
-            flatDropColor: 0x3333ff,
-            flatDropInnerRadius: 0.015,
-            flatDropOuterRadius: 0.045,
-            latticeZOffset: 0.001,
-            eventType: "uvset"
+            wviz.blueDrop = makeDrop(wviz.m, {
+                terrainDropColor: 0x3333ff,
+                terrainDropRadius: wviz.settings.drop.radius,
+                flatDropColor: 0x3333ff,
+                flatDropInnerRadius: 0.015,
+                flatDropOuterRadius: 0.045,
+                latticeZOffset: 0.002,
+                eventType: "uvset"
+            });
+            wviz.d3.add( wviz.blueDrop.terrainDropObj );
+            wviz.d2.add( wviz.blueDrop.flatDropObj );
+            zNudged3DEdges.add( wviz.blueDrop.terrainTrailTObj );
+            zNudged2DEdges.add( wviz.blueDrop.flatTrailTObj );
+
+            wviz.yellowDrop = makeDrop(wviz.m, {
+                terrainDropColor: 0xcccc00,
+                terrainDropRadius: 1.5*wviz.settings.drop.radius,
+                flatDropColor: 0xcccc00,
+                flatDropInnerRadius: 0.015,
+                flatDropOuterRadius: 0.1,
+                latticeZOffset: 0.0025,
+                eventType: "yuvset"
+            });
+            wviz.d3.add( wviz.yellowDrop.terrainDropObj );
+            wviz.d2.add( wviz.yellowDrop.flatDropObj );
+
+            wviz.d2.add(t.latticeArrows);
+            wviz.latticeArrows = t.latticeArrows;
+
+            renderTexture();
+
+            wviz.requestRender();
+            wviz.emit({type: "launched"});
         });
-        wviz.d3.add( wviz.blueDrop.terrainDropObj );
-        wviz.d2.add( wviz.blueDrop.flatDropObj );
-        zNudged3DEdges.add( wviz.blueDrop.terrainTrailTObj );
-        zNudged2DEdges.add( wviz.blueDrop.flatTrailTObj );
-
-        wviz.yellowDrop = makeDrop(wviz.m, {
-            terrainDropColor: 0xcccc00,
-            terrainDropRadius: 1.5*wviz.settings.drop.radius,
-            flatDropColor: 0xcccc00,
-            flatDropInnerRadius: 0.015,
-            flatDropOuterRadius: 0.1,
-            latticeZOffset: 0.0015,
-            eventType: "yuvset"
-        });
-        wviz.d3.add( wviz.yellowDrop.terrainDropObj );
-        wviz.d2.add( wviz.yellowDrop.flatDropObj );
-
-        wviz.d2.add(t.latticeArrows);
-        wviz.latticeArrows = t.latticeArrows;
-
-        renderTexture();
-
-        wviz.requestRender();
-        wviz.emit({type: "launched"});
     });
-
-
 
 };
 
