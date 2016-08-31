@@ -38,7 +38,7 @@ wviz.settings = {
         lookAt: [0,0,0]
     },
     drop: {
-        radius: 0.1,
+        radius: 0.05,
         fallSpeed: 100,
         trailColor: "#0000ff",
         trailLineWidth: 8
@@ -116,6 +116,126 @@ function renderTexture() {
     //    wviz.drop.txRenderTrail(wviz.flatTextureContext);
     //}
 }
+
+function neighborUVPoints(uv, includeSelf) {
+    if (!uv) { return null; }
+    var u = uv[0];
+    var v = uv[1];
+    var uu, vv;
+    var points = [];
+    for (uu=u-1; uu<=u+1; ++uu) {
+        for (vv=v-1; vv<=v+1; ++vv) {
+            if ((uu!==u || vv!==v || includeSelf)
+                && uu >= 0 && uu < wviz.m.Nu
+                && vv >= 0 && vv < wviz.m.Nv) {
+                points.push([uu,vv]);
+                //var xy = wviz.m.uv_to_xy([uu,vv]);
+                //points.push([xy[0], xy[1], wviz.m.meshData[vv][uu]]);
+            }
+        }
+    }
+    return points;
+}
+
+function makeNeighborPoints() {
+    var points = neighborUVPoints(wviz.drop.uv);
+    if (points === null) { return null; }
+    var defaultSurfaceMaterial = new THREE.MeshPhongMaterial({
+        color: 0x000000,
+        side: THREE.DoubleSide,
+        shading: THREE.SmoothShading
+    });
+    var nextSurfaceMaterial = new THREE.MeshPhongMaterial({
+        color: 0x00ff00,
+        side: THREE.DoubleSide,
+        shading: THREE.SmoothShading
+    });
+    var neighbors = new THREE.Object3D();
+    points.forEach(function(point) {
+        var xy = wviz.m.uv_to_xy(point);
+        var next = wviz.m.flow[wviz.drop.uv[0]][wviz.drop.uv[1]];
+        var mat = (point[0]===next[0] && point[1]===next[1]) ? nextSurfaceMaterial : defaultSurfaceMaterial;
+        var sph = new THREE.SphereGeometry( wviz.settings.drop.radius/2, 8, 8 );
+        var mesh = new THREE.Mesh(sph, mat);
+        mesh.position.set(xy[0], xy[1], wviz.m.meshData[point[0]][point[1]]);
+        neighbors.add( mesh );
+    });
+    return neighbors;
+}
+
+function makeNeighborHeightLines() {
+    var points = neighborUVPoints(wviz.drop.uv, true);
+    if (points === null) { return null; }
+
+    var defaultLineMat = new THREE.LineBasicMaterial({
+        color: 0x000000,
+        linewidth: 3
+    });
+    var currentLineMat = new THREE.LineBasicMaterial({
+        color: 0x0000ff,
+        linewidth: 3
+    });
+    var nextLineMat = new THREE.LineBasicMaterial({
+        color: 0x00ff00,
+        linewidth: 3
+    });
+
+    var defaultLineGeom = new THREE.Geometry();
+    var currentLineGeom = new THREE.Geometry();
+    var nextLineGeom = new THREE.Geometry();
+    var defaultObj = new THREE.LineSegments(defaultLineGeom, defaultLineMat);
+    var currentObj = new THREE.LineSegments(currentLineGeom, currentLineMat);
+    var nextObj = new THREE.LineSegments(nextLineGeom, nextLineMat);
+    var lines = new THREE.Object3D();
+    lines.add(defaultObj);
+    lines.add(currentObj);
+    lines.add(nextObj);
+    points.forEach(function(point) {
+        var xy = wviz.m.uv_to_xy(point);
+        var p0 = new THREE.Vector3(xy[0], xy[1], wviz.settings.terrain.latticeZ);
+        var p1 = new THREE.Vector3(xy[0], xy[1], wviz.m.meshData[point[0]][point[1]]);
+        var next = wviz.m.flow[wviz.drop.uv[0]][wviz.drop.uv[1]];
+        if (point[0]===next[0] && point[1]===next[1]) {
+            nextLineGeom.vertices.push(p0, p1);
+        } else if (point[0]===wviz.drop.uv[0] && point[1]===wviz.drop.uv[1]) {
+            currentLineGeom.vertices.push(p0, p1);
+        } else {
+            defaultLineGeom.vertices.push(p0, p1);
+        }
+    });
+    return lines;
+}
+
+wviz.showNeighborPoints = function() {
+    wviz.hideNeighborPoints();
+    wviz.neighborPoints = makeNeighborPoints();
+    wviz.d3.add(wviz.neighborPoints);
+    wviz.requestRender();
+};
+
+wviz.hideNeighborPoints = function() {
+    if (wviz.neighborPoints) {
+        wviz.d3.remove(wviz.neighborPoints);
+    }
+    wviz.neighborPoints = null;
+    wviz.requestRender();
+};
+
+
+wviz.showHeightLines = function() {
+    wviz.hideHeightLines();
+    wviz.heightLines = makeNeighborHeightLines();
+    wviz.d3.add(wviz.heightLines);
+    wviz.requestRender();
+};
+
+wviz.hideHeightLines = function() {
+    if (wviz.heightLines) {
+        wviz.d3.remove(wviz.heightLines);
+    }
+    wviz.heightLines = null;
+    wviz.requestRender();
+};
 
 wviz.advanceDropOnce = function(a) {
     if (wviz.drop.uv) {
@@ -283,7 +403,7 @@ function makeDrop(m) {
             var x = xy[0];
             var y = xy[1];
             trailXY.push(xy);
-            var z = m.meshData[u][v]+wviz.settings.drop.radius;
+            var z = m.meshData[u][v]+wviz.settings.drop.radius/2;
             wviz.drop.uv = [u,v];
             this.uv = [u,v];
             spherePositionObj.visible = true;
@@ -444,6 +564,12 @@ wviz.launch = function(canvas, width, height, commands) {
 
 
 
+};
+
+wviz.setUV = function(uv) {
+    if (uv) {
+        wviz.drop.moveToUV(uv[0], uv[1]);
+    }
 };
 
 module.exports = wviz;

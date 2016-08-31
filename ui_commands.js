@@ -193,9 +193,72 @@ module.exports = function(state) {
             }
         },
 
+        {
+            //seq: undefined // no kbd seq for this one
+            permalink: {
+                key: "uv",
+                urlKey: "uv",
+                default: null,
+                parse: parseUtils.parseIntArray,
+                toString: parseUtils.intArrayToString,
+                setState: state.wviz.setUV
+            }
+        },
+
         { seq: " ",
           action: state.wviz.advanceDropOnce,
           msgfunc: function() { return "advance once"; }
+        },
+
+
+        { seq: "n",
+          action: function() {
+              if (state.wviz.neighborPoints) {
+                  state.wviz.hideNeighborPoints();
+              } else {
+                  state.wviz.showNeighborPoints();
+              }
+              state.permalink.set("neighborPoints", !!state.wviz.neighborPoints);
+              state.permalink.updateWindowURL();
+          },
+          msgfunc: function() { return "toggle neighbor points"; },
+          permalink: {
+              key: "neighborPoints",
+              urlKey: "n",
+              default: null,
+              parse: parseUtils.parseBoolean,
+              toString: parseUtils.booleanToString,
+              setState: function(v) {
+                  if (v) {
+                      state.wviz.showNeighborPoints();
+                  }
+              }
+          }
+        },
+
+        { seq: "h",
+          action: function() {
+              if (state.wviz.heightLines) {
+                  state.wviz.hideHeightLines();
+              } else {
+                  state.wviz.showHeightLines();
+              }
+              state.permalink.set("heightLines", !!state.wviz.heightLines);
+              state.permalink.updateWindowURL();
+          },
+          msgfunc: function() { return "toggle height lines"; },
+          permalink: {
+              key: "heightLines",
+              urlKey: "h",
+              default: null,
+              parse: parseUtils.parseBoolean,
+              toString: parseUtils.booleanToString,
+              setState: function(v) {
+                  if (v) {
+                      state.wviz.showHeightLines();
+                  }
+              }
+          }
         },
 
 
@@ -327,31 +390,6 @@ module.exports = function(state) {
 //              setState: function(v) {
 //                  if (v) {
 //                      state.wviz.showNeighbors();
-//                  }
-//              }
-//          }
-//        },
-//
-//        { seq: "h",
-//          action: function() {
-//              if (state.wviz.heightLines) {
-//                  state.wviz.hideHeightLines();
-//              } else {
-//                  state.wviz.showHeightLines();
-//              }
-//              state.permalink.set("heightLines", !!state.wviz.heightLines);
-//              state.permalink.updateWindowURL();
-//          },
-//          msgfunc: function() { return "toggle height lines"; },
-//          permalink: {
-//              key: "heightLines",
-//              urlKey: "h",
-//              default: null,
-//              parse: parseUtils.parseBoolean,
-//              toString: parseUtils.booleanToString,
-//              setState: function(v) {
-//                  if (v) {
-//                      state.wviz.showHeightLines();
 //                  }
 //              }
 //          }

@@ -67,6 +67,13 @@ function fadeMessage(msg) {
     });
 }
 
+wviz.addListener("uvset", function(e) {
+    if (permalink) {
+        permalink.set("uv", e.uv);
+        permalink.updateWindowURL();
+    }
+});
+
 var kp = kbd_processor(commands,
                        function(msg) {
                            displayMessage(msg);
