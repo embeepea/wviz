@@ -201,7 +201,7 @@ module.exports = function(state) {
                 default: null,
                 parse: parseUtils.parseIntArray,
                 toString: parseUtils.intArrayToString,
-                setState: state.wviz.setUV
+                setState: state.wviz.setBlueUV
             }
         },
 

@@ -111,9 +111,9 @@ function renderTexture() {
         txDrawGridLines(wviz.terrainTextureContext);
         txDrawGridLines(wviz.flatTextureContext);
     }
-    //if (wviz.drop && wviz.drop.uv) {
-    //    wviz.drop.txRenderTrail(wviz.terrainTextureContext);
-    //    wviz.drop.txRenderTrail(wviz.flatTextureContext);
+    //if (wviz.blueDrop && wviz.blueDrop.uv) {
+    //    wviz.blueDrop.txRenderTrail(wviz.terrainTextureContext);
+    //    wviz.blueDrop.txRenderTrail(wviz.flatTextureContext);
     //}
 }
 
@@ -138,7 +138,7 @@ function neighborUVPoints(uv, includeSelf) {
 }
 
 function makeNeighborPoints() {
-    var points = neighborUVPoints(wviz.drop.uv);
+    var points = neighborUVPoints(wviz.blueDrop.uv);
     if (points === null) { return null; }
     var defaultSurfaceMaterial = new THREE.MeshPhongMaterial({
         color: 0x000000,
@@ -153,7 +153,7 @@ function makeNeighborPoints() {
     var neighbors = new THREE.Object3D();
     points.forEach(function(point) {
         var xy = wviz.m.uv_to_xy(point);
-        var next = wviz.m.flow[wviz.drop.uv[0]][wviz.drop.uv[1]];
+        var next = wviz.m.flow[wviz.blueDrop.uv[0]][wviz.blueDrop.uv[1]];
         var mat = (point[0]===next[0] && point[1]===next[1]) ? nextSurfaceMaterial : defaultSurfaceMaterial;
         var sph = new THREE.SphereGeometry( wviz.settings.drop.radius/2, 8, 8 );
         var mesh = new THREE.Mesh(sph, mat);
@@ -164,7 +164,7 @@ function makeNeighborPoints() {
 }
 
 function makeNeighborHeightLines() {
-    var points = neighborUVPoints(wviz.drop.uv, true);
+    var points = neighborUVPoints(wviz.blueDrop.uv, true);
     if (points === null) { return null; }
 
     var defaultLineMat = new THREE.LineBasicMaterial({
@@ -194,10 +194,10 @@ function makeNeighborHeightLines() {
         var xy = wviz.m.uv_to_xy(point);
         var p0 = new THREE.Vector3(xy[0], xy[1], wviz.settings.terrain.latticeZ);
         var p1 = new THREE.Vector3(xy[0], xy[1], wviz.m.meshData[point[0]][point[1]]);
-        var next = wviz.m.flow[wviz.drop.uv[0]][wviz.drop.uv[1]];
+        var next = wviz.m.flow[wviz.blueDrop.uv[0]][wviz.blueDrop.uv[1]];
         if (point[0]===next[0] && point[1]===next[1]) {
             nextLineGeom.vertices.push(p0, p1);
-        } else if (point[0]===wviz.drop.uv[0] && point[1]===wviz.drop.uv[1]) {
+        } else if (point[0]===wviz.blueDrop.uv[0] && point[1]===wviz.blueDrop.uv[1]) {
             currentLineGeom.vertices.push(p0, p1);
         } else {
             defaultLineGeom.vertices.push(p0, p1);
@@ -238,12 +238,12 @@ wviz.hideHeightLines = function() {
 };
 
 wviz.advanceDropOnce = function(a) {
-    if (wviz.drop.uv) {
+    if (wviz.blueDrop.uv) {
         if (typeof(a)==="undefined") { a = 1; }
         while (a-- > 0) {
-            var nextUV = wviz.m.flow[wviz.drop.uv[0]][wviz.drop.uv[1]];
+            var nextUV = wviz.m.flow[wviz.blueDrop.uv[0]][wviz.blueDrop.uv[1]];
             if (nextUV) {
-                wviz.drop.moveToUV(nextUV[0], nextUV[1]);
+                wviz.blueDrop.moveToUV(nextUV[0], nextUV[1]);
                 wviz.requestRender();
             }
         }
@@ -290,24 +290,31 @@ function createCamera(width, height) {
     return camera;
 }
 
-function makeDrop(m) {
+//terrainDropColor: 0x3333ff
+//terrainDropRadius: wviz.settings.drop.radius
+//flatDropColor: 0x3333ff
+//flatDropInnerRadius: 0.015
+//flatDropOuterRadius: 0.045
+// latticeZOffset: 0.001
+//eventType: "uvset"
+function makeDrop(m, options) {
     var geometry = new THREE.SphereGeometry( 1, 16, 16 );
     var sphereDropMat = new THREE.MeshPhongMaterial({
-        color: 0x3333ff,
+        color: options.terrainDropColor,
         side: THREE.DoubleSide,
         shading: THREE.SmoothShading
     });
     var sphereScaleObj = new THREE.Object3D();
-    sphereScaleObj.scale.set(wviz.settings.drop.radius,
-                             wviz.settings.drop.radius,
-                             wviz.settings.drop.radius);
+    sphereScaleObj.scale.set(options.terrainDropRadius,
+                             options.terrainDropRadius,
+                             options.terrainDropRadius);
     sphereScaleObj.add( new THREE.Mesh( geometry, sphereDropMat ) );
     var spherePositionObj = new THREE.Object3D();
     spherePositionObj.add(sphereScaleObj);
     spherePositionObj.visible = false;
 
     var flatDropMat = new THREE.MeshBasicMaterial({
-        color: 0x3333ff,
+        color: options.flatDropColor,
         side: THREE.DoubleSide
     });
 
@@ -346,7 +353,10 @@ function makeDrop(m) {
     var circlePositionObj = new THREE.Object3D();
     circlePositionObj.visible = false;
     var circleGeom = new THREE.Geometry();
-    addAnnulus(circleGeom, 0, 0, 0.015, 0.045, 12, 0);
+    addAnnulus(circleGeom, 0, 0, 
+               options.flatDropInnerRadius,
+               options.flatDropOuterRadius,
+               12, 0);
     var circleScaleObj = new THREE.Mesh(circleGeom, flatDropMat);
     circlePositionObj.add(circleScaleObj);
     circlePositionObj.visible = false;
@@ -360,7 +370,7 @@ function makeDrop(m) {
     });
     var trailXY = [];
     var lastTrailPoint = null;
-    var flatTrailZ = wviz.settings.terrain.latticeZ+0.001;
+    var flatTrailZ = wviz.settings.terrain.latticeZ+options.latticeZOffset;
     var terrainTrailObj = new THREE.Object3D();
     var flatTrailObj = new THREE.Object3D();
     var terrainTrailTObj = new THREE.Object3D();
@@ -404,8 +414,7 @@ function makeDrop(m) {
             var y = xy[1];
             trailXY.push(xy);
             var z = m.meshData[u][v]+wviz.settings.drop.radius/2;
-            wviz.drop.uv = [u,v];
-            this.uv = [u,v];
+            wviz.blueDrop.uv = [u,v];
             spherePositionObj.visible = true;
             spherePositionObj.position.set(x,y,z);
             circlePositionObj.visible = true;
@@ -426,7 +435,7 @@ function makeDrop(m) {
                 flatTrailObj.add(new THREE.LineSegments(flatTrailGeom, trailMat));
             }
             lastTrailPoint = [x,y,m.meshData[u][v]];
-            wviz.emit({type: "uvset", uv: [u,v]});
+            wviz.emit({type: options.eventType, uv: [u,v]});
         },
         setRadius: function(r) {
             sphereScaleObj.scale.set(r,r,r);
@@ -507,7 +516,7 @@ wviz.launch = function(canvas, width, height, commands) {
 
     var raycaster = new THREE.Raycaster();
 
-    wviz.pick = function(x,y,callback) {
+    wviz.pick = function(x,y,callback,nopick_callback) {
         var mouse = new THREE.Vector2();
         mouse.x = ( x / window.innerWidth ) * 2 - 1;
         mouse.y = - ( y / window.innerHeight ) * 2 + 1;
@@ -530,6 +539,8 @@ wviz.launch = function(canvas, width, height, commands) {
             var p = new THREE.Vector4(minObj.point.x,minObj.point.y,minObj.point.z,1);
             p.applyMatrix4(TwInv);
             callback(p.x/p.w, p.y/p.w, p.z/p.w);
+        } else if (nopick_callback) {
+            nopick_callback();
         }
     };
 
@@ -550,11 +561,31 @@ wviz.launch = function(canvas, width, height, commands) {
         wviz.terrainTextureContext = t.terrainTextureContext;
         wviz.flatTextureContext = t.flatTextureContext;
 
-        wviz.drop = makeDrop(wviz.m);
-        wviz.d3.add( wviz.drop.terrainDropObj );
-        wviz.d2.add( wviz.drop.flatDropObj );
-        zNudged3DEdges.add( wviz.drop.terrainTrailTObj );
-        zNudged2DEdges.add( wviz.drop.flatTrailTObj );
+        wviz.blueDrop = makeDrop(wviz.m, {
+            terrainDropColor: 0x3333ff,
+            terrainDropRadius: wviz.settings.drop.radius,
+            flatDropColor: 0x3333ff,
+            flatDropInnerRadius: 0.015,
+            flatDropOuterRadius: 0.045,
+            latticeZOffset: 0.001,
+            eventType: "uvset"
+        });
+        wviz.d3.add( wviz.blueDrop.terrainDropObj );
+        wviz.d2.add( wviz.blueDrop.flatDropObj );
+        zNudged3DEdges.add( wviz.blueDrop.terrainTrailTObj );
+        zNudged2DEdges.add( wviz.blueDrop.flatTrailTObj );
+
+        wviz.yellowDrop = makeDrop(wviz.m, {
+            terrainDropColor: 0xcccc00,
+            terrainDropRadius: 1.5*wviz.settings.drop.radius,
+            flatDropColor: 0xcccc00,
+            flatDropInnerRadius: 0.015,
+            flatDropOuterRadius: 0.065,
+            latticeZOffset: 0.0015,
+            eventType: "yuvset"
+        });
+        wviz.d3.add( wviz.yellowDrop.terrainDropObj );
+        wviz.d2.add( wviz.yellowDrop.flatDropObj );
 
         renderTexture();
 
@@ -566,9 +597,9 @@ wviz.launch = function(canvas, width, height, commands) {
 
 };
 
-wviz.setUV = function(uv) {
+wviz.setBlueUV = function(uv) {
     if (uv) {
-        wviz.drop.moveToUV(uv[0], uv[1]);
+        wviz.blueDrop.moveToUV(uv[0], uv[1]);
     }
 };
 

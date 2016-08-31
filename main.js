@@ -7,7 +7,6 @@ var rain = require('./rain.js');
 var URL = require('./url.js');
 var kbd_processor = require('./kbd_processor.js');
 var wviz = require('./wviz.js');
-var MultiPolygon = require('./MultiPolygon.js');
 var ui_commands = require('./ui_commands.js');
 var width, height, canvas;
 var Permalink = require('./Permalink.js');
@@ -18,7 +17,6 @@ var permalink = null;
 var state = {
     wviz: wviz,
     permalink: permalink,
-    scaleTarget: "world",      // or "drop"
     mouseDragMode: "rotate",   // or "translate"
     visible: {
         edges: false,
@@ -139,54 +137,45 @@ wviz.addListener("launched", function(e) {
                     // shift-left-click event
                     wviz.pick(p.x, p.y, function(x,y,z) {
                         var uv = wviz.m.xy_to_uv([x,y]);
-                        wviz.drop.clearTrail();
-                        wviz.drop.moveToUV(uv[0], uv[1]);
+                        wviz.blueDrop.clearTrail();
+                        wviz.blueDrop.moveToUV(uv[0], uv[1]);
                         wviz.requestRender();
                     });
                 }
                 if (event.ctrlKey && event.button === 0) {
                     // ctrl-left-click event
-                    //wviz.pick(p.x, p.y, function(x,y,z) {
-                    //    center.position.set(x,y,z);
-                    //    if (permalink) {
-                    //        permalink.set("center", [x,y,z]);
-                    //        permalink.updateWindowURL();
-                    //    }
-                    //    wviz.requestRender();
-                    //});
+                    wviz.pick(p.x, p.y, function(x,y,z) {
+                        var uv = wviz.m.xy_to_uv([x,y]);
+                        wviz.yellowDrop.clearTrail();
+                        wviz.yellowDrop.moveToUV(uv[0], uv[1]);
+                        wviz.requestRender();
+                    }, function() {
+                        wviz.yellowDrop.terrainDropObj.visible = false;
+                        wviz.yellowDrop.flatDropObj.visible = false;
+                        wviz.requestRender();
+                    });
                 }
             }
         },
         mouseWheel: function(delta, p) {
             var s;
-            if (state.scaleTarget === "world") {
-                wviz.pick(p.x, p.y, function(x,y,z) {
-                    center.position.set(x,y,z);
-                    if (permalink) {
-                        permalink.set("center", [x,y,z]);
-                        permalink.updateWindowURL();
-                    }
-                });
-                s = Math.exp(delta/20.0);
-                var R = new THREE.Matrix4().makeScale(s,s,s);
-                var M = EventTracker.computeTransform(moving,center,frame, R);
-                moving.matrix.multiplyMatrices(moving.matrix, M);
+            wviz.pick(p.x, p.y, function(x,y,z) {
+                center.position.set(x,y,z);
                 if (permalink) {
-                    permalink.set("mm", moving.matrix);
+                    permalink.set("center", [x,y,z]);
                     permalink.updateWindowURL();
                 }
-                moving.matrixWorldNeedsUpdate = true;
-                wviz.requestRender();
-            } else if (state.scaleTarget === "drop") {
-                s = Math.exp(delta/20.0);
-                //wviz.settings.drop.radius *= s;
-                //wviz.drop.setRadius(wviz.settings.drop.radius);
-                //if (permalink) {
-                //    permalink.set("dr", wviz.settings.drop.radius);
-                //    permalink.updateWindowURL();
-                //}
-                //wviz.requestRender();
+            });
+            s = Math.exp(delta/20.0);
+            var R = new THREE.Matrix4().makeScale(s,s,s);
+            var M = EventTracker.computeTransform(moving,center,frame, R);
+            moving.matrix.multiplyMatrices(moving.matrix, M);
+            if (permalink) {
+                permalink.set("mm", moving.matrix);
+                permalink.updateWindowURL();
             }
+            moving.matrixWorldNeedsUpdate = true;
+            wviz.requestRender();
         },
         keyPress: function(event) {
             kp.key(event.key);
