@@ -44,58 +44,57 @@ module.exports = function(state) {
         },
 
         {
-            seq: "ae",
-            action: function() {
-                state.wviz.visible("gridLines", !state.wviz.visible("gridLines"));
-                state.permalink.set("gridLines", state.wviz.visible("gridLines"));
-                state.permalink.updateWindowURL();
-                state.wviz.requestRender();
-            },
-            msgfunc: function() { return "3D " + (state.wviz.visible("gridLines") ? "on" : "off"); },
-            permalink: {
-                key: "gridLines",
-                urlKey: "ae",
-                default: null,
-                parse: parseUtils.parseBoolean,
-                toString: parseUtils.booleanToString,
-                setState: function(v) { state.wviz.visible("gridLines",v); }
-            }
-        },
-
-        {
             seq: "ap",
             action: function() {
-                state.wviz.visible("gridPoints", !state.wviz.visible("gridPoints"));
-                state.permalink.set("gridPoints", state.wviz.visible("gridPoints"));
+                state.wviz.visible("basePoints", !state.wviz.visible("basePoints"));
+                state.permalink.set("basePoints", state.wviz.visible("basePoints"));
                 state.permalink.updateWindowURL();
                 state.wviz.requestRender();
             },
-            msgfunc: function() { return "3D " + (state.wviz.visible("gridPoints") ? "on" : "off"); },
+            msgfunc: function() { return "3D " + (state.wviz.visible("basePoints") ? "on" : "off"); },
             permalink: {
-                key: "gridPoints",
+                key: "basePoints",
                 urlKey: "ap",
                 default: null,
                 parse: parseUtils.parseBoolean,
                 toString: parseUtils.booleanToString,
-                setState: function(v) { state.wviz.visible("gridPoints",v); }
+                setState: function(v) { state.wviz.visible("basePoints",v); }
             }
         },
         {
             seq: "af",
             action: function() {
-                state.wviz.visible("faces", !state.wviz.visible("faces"));
-                state.permalink.set("faces", state.wviz.visible("faces"));
+                state.wviz.visible("terrainFaces", !state.wviz.visible("terrainFaces"));
+                state.permalink.set("terrainFaces", state.wviz.visible("terrainFaces"));
                 state.permalink.updateWindowURL();
                 state.wviz.requestRender();
             },
-            msgfunc: function() { return "faces " + (state.wviz.visible("faces") ? "on" : "off"); },
+            msgfunc: function() { return "terrain faces " + (state.wviz.visible("terrainFaces") ? "on" : "off"); },
             permalink: {
-                key: "faces",
+                key: "terrainFaces",
                 urlKey: "af",
                 default: null,
                 parse: parseUtils.parseBoolean,
                 toString: parseUtils.booleanToString,
                 setState: function(v) { state.wviz.visible("faces",v); }
+            }
+        },
+        {
+            seq: "ae",
+            action: function() {
+                state.wviz.visible("terrainEdges", !state.wviz.visible("terrainEdges"));
+                state.permalink.set("terrainEdges", state.wviz.visible("terrainEdges"));
+                state.permalink.updateWindowURL();
+                state.wviz.requestRender();
+            },
+            msgfunc: function() { return "terrain edges " + (state.wviz.visible("terrainEdges") ? "on" : "off"); },
+            permalink: {
+                key: "terrainEdges",
+                urlKey: "ae",
+                default: null,
+                parse: parseUtils.parseBoolean,
+                toString: parseUtils.booleanToString,
+                setState: function(v) { state.wviz.visible("terrainEdges",v); }
             }
         },
         {
@@ -200,7 +199,7 @@ module.exports = function(state) {
                 state.permalink.updateWindowURL();
                 state.wviz.requestRender();
             },
-            msgfunc: function() { return "3D " + (state.wviz.visible("axes") ? "on" : "off"); },
+            msgfunc: function() { return "axes " + (state.wviz.visible("axes") ? "on" : "off"); },
             permalink: {
                 key: "axes",
                 urlKey: "ac",

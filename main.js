@@ -18,15 +18,15 @@ var state = {
     wviz: wviz,
     permalink: permalink,
     mouseDragMode: "rotate",   // or "translate"
-    visible: {
-        edges: false,
-        faces: true,
-        axes: false,
-        base: true,
-        baseArrows: false,
-        d2: false,
-        d3: true
-    }
+    //visible: {
+    //    edges: false,
+    //    faces: true,
+    //    axes: false,
+    //    base: true,
+    //    baseArrows: false,
+    //    d2: false,
+    //    d3: true
+    //}
 };
 
 //  wviz.setEdges(state.visible["edges"]);

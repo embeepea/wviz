@@ -62,7 +62,6 @@ function load(meshURL, settings, callback) {
                 return new THREE.Vector3(v.x, v.y, z);
             }
             var dz = 0;
-            var zL = settings.terrain.baseZ;
 
             //// terrain edges:
             var terrainEdgeGeom = new THREE.Geometry();
@@ -80,7 +79,7 @@ function load(meshURL, settings, callback) {
             }
             var edgeMat = new THREE.LineBasicMaterial({
                 color: 0x000000,
-                linewidth: 3
+                linewidth: settings.terrain.edgeLineWidth
             });
             var terrainEdgeObj = new THREE.LineSegments(terrainEdgeGeom, edgeMat);
             ////
@@ -128,7 +127,7 @@ function load(meshURL, settings, callback) {
             for (u=0; u<m.Nu; ++u) {
                 for (v=0; v<m.Nv; ++v) {
                     xy = m.uv_to_xy([u,v]);
-                    addCircle(basePointGeom, xy[0], xy[1], r, 12, zL);
+                    addCircle(basePointGeom, xy[0], xy[1], r, 12, settings.terrain.baseZLevel3);
                 }
             }
             var basePointMat = new THREE.MeshBasicMaterial( {
@@ -144,8 +143,7 @@ function load(meshURL, settings, callback) {
             var a = 0.020;
             var b = 0.010;
             var c = 0.003;
-            var k = 0;
-            var zL = settings.terrain.baseZ + 0.001;
+            k = 0;
             for (u=0; u<m.Nu; ++u) {
                 for (v=0; v<m.Nv; ++v) {
                     var nuv = m.flow[u][v];
@@ -154,16 +152,16 @@ function load(meshURL, settings, callback) {
                         var nxy = m.uv_to_xy(nuv);
                         var ar = arrow.garrow([xy[0],xy[1]], [nxy[0],nxy[1]], g, a, b, c);
                         ar.headFaces.forEach(function(p) {
-                            baseArrowGeom.vertices.push(new THREE.Vector3(p[0][0],p[0][1],zL),
-                                                               new THREE.Vector3(p[1][0],p[1][1],zL),
-                                                               new THREE.Vector3(p[2][0],p[2][1],zL));
+                            baseArrowGeom.vertices.push(new THREE.Vector3(p[0][0],p[0][1],settings.terrain.baseZLevel3),
+                                                        new THREE.Vector3(p[1][0],p[1][1],settings.terrain.baseZLevel3),
+                                                        new THREE.Vector3(p[2][0],p[2][1],settings.terrain.baseZLevel3));
                             baseArrowGeom.faces.push(new THREE.Face3(k, k+1, k+2));
                             k += 3;
                         });
                         ar.shaftFaces.forEach(function(p) {
-                            baseArrowGeom.vertices.push(new THREE.Vector3(p[0][0],p[0][1],zL),
-                                                               new THREE.Vector3(p[1][0],p[1][1],zL),
-                                                               new THREE.Vector3(p[2][0],p[2][1],zL));
+                            baseArrowGeom.vertices.push(new THREE.Vector3(p[0][0],p[0][1],settings.terrain.baseZLevel3),
+                                                        new THREE.Vector3(p[1][0],p[1][1],settings.terrain.baseZLevel3),
+                                                        new THREE.Vector3(p[2][0],p[2][1],settings.terrain.baseZLevel3));
                             baseArrowGeom.faces.push(new THREE.Face3(k, k+1, k+2));
                             k += 3;
                         });
@@ -182,10 +180,10 @@ function load(meshURL, settings, callback) {
                                                 settings.terrain.txSize,
                                                 m.xMin, m.xMax, m.yMin, m.yMax);
             var quadGeom = new THREE.Geometry();
-            quadGeom.vertices.push(new THREE.Vector3(m.xMin, m.yMin, settings.terrain.baseZ),
-                                   new THREE.Vector3(m.xMin, m.yMax, settings.terrain.baseZ),
-                                   new THREE.Vector3(m.xMax, m.yMax, settings.terrain.baseZ),
-                                   new THREE.Vector3(m.xMax, m.yMin, settings.terrain.baseZ));
+            quadGeom.vertices.push(new THREE.Vector3(m.xMin, m.yMin, settings.terrain.baseZLevel0),
+                                   new THREE.Vector3(m.xMin, m.yMax, settings.terrain.baseZLevel0),
+                                   new THREE.Vector3(m.xMax, m.yMax, settings.terrain.baseZLevel0),
+                                   new THREE.Vector3(m.xMax, m.yMin, settings.terrain.baseZLevel0));
             quadGeom.faces.push(new THREE.Face3(0,1,2));
             quadGeom.faces.push(new THREE.Face3(0,2,3));
             uvs = [
@@ -205,13 +203,23 @@ function load(meshURL, settings, callback) {
                 side: THREE.DoubleSide,
                 shading: THREE.SmoothShading
             });
-            var quadMesh = new THREE.Mesh(quadGeom, quadMat);
+            var baseQuadObj = new THREE.Mesh(quadGeom, quadMat);
 
             callback({
-                faces: terrainFaceObj,
-                edges: terrainEdgeObj,
-                base: basePointObj,
-                baseQuad: quadMesh,
+
+//terrainFaces
+//terrainEdges
+//
+//baseFaces    baseQuadObj,
+//basePoints   basePointObj
+//baseArrows   baseArrowObj
+
+
+
+                terrainFaces: terrainFaceObj,
+                terrainEdges: terrainEdgeObj,
+                baseFaces: baseQuadObj,
+                basePoints: basePointObj,
                 baseArrows: baseArrowObj,
                 m: m,
                 terrainTextureContext: terrainTextureContext,

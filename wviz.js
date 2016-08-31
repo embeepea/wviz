@@ -9,14 +9,20 @@ var upstream = require('./upstream.js');
 var wviz = {};
 window.wviz = wviz;
 
+var baseZ = -0.5;
 wviz.settings = {
     backgroundColor: 0xffffff,
-    edgeZNudge: 0.01,
+    edgeZNudge: 0.05,
     terrain: {
+        edgeLineWidth: 2,
         //txSize: 1024,
         txSize: 2048,
         txBackgroundColor: "rgba(136,255,136,0.1)",
-        baseZ: -0.5
+        baseZLevel0: baseZ+0,     // baseFace
+        baseZLevel1: baseZ+0.001, // yellow dot
+        baseZLevel2: baseZ+0.002, // blue dot
+        baseZLevel3: baseZ+0.003, // dots & arrows
+        baseZLevel4: baseZ+0.004 // text
     },
     lights: {
         directional: [
@@ -92,13 +98,15 @@ function txDrawGridLines(ctx) {
 };
 
 wviz._visible = {
-    gridLines: true,
-    gridPoints: false,
-    faces: true,
+    terrainEdges: true,
+    terrainFaces: true,
+    terrainEdges: true,
+    baseFaces: true,
+    basePoints: false,
+    baseArrows: false,
     d3: true,
     d2: false,
-    axes: false,
-    baseArrows: false
+    axes: false
 };
 
 function renderTexture() {
@@ -111,14 +119,14 @@ function renderTexture() {
     txDrawUpstreamMultiPolygonBoundaries(wviz.terrainTextureContext);
     txDrawUpstreamMultiPolygonBoundaries(wviz.flatTextureContext);
 
-    if (wviz._visible.gridPoints) {
-        txDrawGridPoints(wviz.terrainTextureContext);
-        txDrawGridPoints(wviz.flatTextureContext);
-    }
-    if (wviz._visible.gridLines) {
-        txDrawGridLines(wviz.terrainTextureContext);
-        txDrawGridLines(wviz.flatTextureContext);
-    }
+    //if (wviz._visible.gridPoints) {
+    //    txDrawGridPoints(wviz.terrainTextureContext);
+    //    txDrawGridPoints(wviz.flatTextureContext);
+    //}
+    //if (wviz._visible.terrainEdges) {
+    //    txDrawGridLines(wviz.terrainTextureContext);
+    //    txDrawGridLines(wviz.flatTextureContext);
+    //}
 
     //if (wviz.blueDrop && wviz.blueDrop.uv) {
     //    wviz.blueDrop.txRenderTrail(wviz.terrainTextureContext);
@@ -201,7 +209,7 @@ function makeNeighborHeightLines() {
     lines.add(nextObj);
     points.forEach(function(point) {
         var xy = wviz.m.uv_to_xy(point);
-        var p0 = new THREE.Vector3(xy[0], xy[1], wviz.settings.terrain.baseZ);
+        var p0 = new THREE.Vector3(xy[0], xy[1], wviz.settings.terrain.baseZLevel0);
         var p1 = new THREE.Vector3(xy[0], xy[1], wviz.m.meshData[point[0]][point[1]]);
         var next = wviz.m.flow[wviz.blueDrop.uv[0]][wviz.blueDrop.uv[1]];
         if (point[0]===next[0] && point[1]===next[1]) {
@@ -249,7 +257,7 @@ function makeNeighborText() {
                 oneTextObj.add(textMesh);
                 oneTextObj.position.set(xy[0] + textOptions.size,
                                         xy[1] + textOptions.size,
-                                        wviz.settings.terrain.baseZ+0.004);
+                                        wviz.settings.terrain.baseZLevel4);
                 textObj.add(oneTextObj);
             }
         }
@@ -319,15 +327,19 @@ wviz.advanceDropOnce = function(a) {
 wviz.visible = function(what, v) {
     if (typeof(v) !== "undefined") {
         wviz._visible[what] = v;
-        wviz.textureNeedsRendering = true;
-        if (what === "faces") {
-            wviz.faces.visible = v;
+        //wviz.textureNeedsRendering = true;
+        if (what === "terrainFaces") {
+            wviz.terrainFaces.visible = v;
+        } else if (what === "terrainEdges") {
+            wviz.terrainEdges.visible = v;
         } else if (what === "d3") {
             wviz.d3.visible = v;
         } else if (what === "d2") {
             wviz.d2.visible = v;
         } else if (what === "axes") {
             wviz.axes.visible = v;
+        } else if (what === "basePoints") {
+            wviz.basePoints.visible = v;
         } else if (what === "baseArrows") {
             wviz.baseArrows.visible = v;
         }
@@ -431,7 +443,7 @@ function makeDrop(m, options) {
     });
     var trailXY = [];
     var lastTrailPoint = null;
-    var flatTrailZ = wviz.settings.terrain.baseZ+options.baseZOffset;
+    var flatTrailZ = wviz.settings.terrain.baseZLevel4;
     var terrainTrailObj = new THREE.Object3D();
     var flatTrailObj = new THREE.Object3D();
     var terrainTrailTObj = new THREE.Object3D();
@@ -480,7 +492,7 @@ function makeDrop(m, options) {
             spherePositionObj.visible = true;
             spherePositionObj.position.set(x,y,z);
             circlePositionObj.visible = true;
-            circlePositionObj.position.set(x,y,flatTrailZ);
+            circlePositionObj.position.set(x,y,options.baseZ);
             //wviz.textureNeedsRendering = true;
             if (lastTrailPoint) {
                 var terrainTrailGeom = new THREE.Geometry();
@@ -614,15 +626,22 @@ wviz.launch = function(canvas, width, height, commands) {
             //terrain.load('./data/smallmesh32x32.mesh', wviz.settings, function(t) {
             wviz.m = t.m;
 
-            wviz.faces = t.faces;
-            wviz.faces.visible = wviz._visible.faces;
-            wviz.d3.add(t.faces);
-            wviz.faces.pickable = true;
+            wviz.terrainFaces = t.terrainFaces;
+            wviz.terrainFaces.visible = wviz._visible.terrainFaces;
+            wviz.d3.add(t.terrainFaces);
+            wviz.terrainFaces.pickable = true;
+            wviz.terrainEdges = t.terrainEdges;
+            wviz.terrainEdges.visible = wviz._visible.terrainEdges;
+            zNudged3DEdges.add(t.terrainEdges);
 
-            wviz.baseQuad = t.baseQuad;
-            wviz.baseQuad.visible = wviz._visible.baseQuad;
-            wviz.d2.add(t.baseQuad);
-            wviz.baseQuad.pickable = true;
+            wviz.baseFaces = t.baseFaces;
+            wviz.baseFaces.visible = wviz._visible.baseFaces;
+            wviz.d2.add(t.baseFaces);
+            wviz.baseFaces.pickable = true;
+
+            wviz.basePoints = t.basePoints;
+            wviz.basePoints.visible = wviz._visible.basePoints;
+            wviz.d2.add(t.basePoints);
 
             wviz.terrainTextureContext = t.terrainTextureContext;
             wviz.flatTextureContext = t.flatTextureContext;
@@ -633,7 +652,7 @@ wviz.launch = function(canvas, width, height, commands) {
                 flatDropColor: 0x3333ff,
                 flatDropInnerRadius: 0.015,
                 flatDropOuterRadius: 0.045,
-                baseZOffset: 0.002,
+                baseZ: wviz.settings.terrain.baseZLevel2,
                 eventType: "uvset"
             });
             wviz.d3.add( wviz.blueDrop.terrainDropObj );
@@ -647,7 +666,7 @@ wviz.launch = function(canvas, width, height, commands) {
                 flatDropColor: 0xcccc00,
                 flatDropInnerRadius: 0.015,
                 flatDropOuterRadius: 0.1,
-                baseZOffset: 0.0025,
+                baseZ: wviz.settings.terrain.baseZLevel1,
                 eventType: "yuvset"
             });
             wviz.d3.add( wviz.yellowDrop.terrainDropObj );
