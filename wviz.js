@@ -111,13 +111,13 @@ wviz._visible = {
 
 function renderTexture() {
     txClear(wviz.terrainTextureContext);
-    txClear(wviz.flatTextureContext);
+    //txClear(wviz.flatTextureContext);
 
     txDrawUpstreamMultiPolygons(wviz.terrainTextureContext);
-    txDrawUpstreamMultiPolygons(wviz.flatTextureContext);
+    //txDrawUpstreamMultiPolygons(wviz.flatTextureContext);
 
     txDrawUpstreamMultiPolygonBoundaries(wviz.terrainTextureContext);
-    txDrawUpstreamMultiPolygonBoundaries(wviz.flatTextureContext);
+    //txDrawUpstreamMultiPolygonBoundaries(wviz.flatTextureContext);
 
     //if (wviz._visible.gridPoints) {
     //    txDrawGridPoints(wviz.terrainTextureContext);
@@ -644,7 +644,7 @@ wviz.launch = function(canvas, width, height, commands) {
             wviz.d2.add(t.basePoints);
 
             wviz.terrainTextureContext = t.terrainTextureContext;
-            wviz.flatTextureContext = t.flatTextureContext;
+            //wviz.flatTextureContext = t.flatTextureContext;
 
             wviz.blueDrop = makeDrop(wviz.m, {
                 terrainDropColor: 0x3333ff,
@@ -757,6 +757,7 @@ function txDrawUpstreamMultiPolygonBoundaries(ctx) {
 
 wviz.clearUpstreamAreas = function() {
     wviz.upstreamMultiPolygons = [];
+    wviz.textureNeedsRendering = true;
 };
 
 wviz.addCurrentYellowDropUpstreamArea = function() {

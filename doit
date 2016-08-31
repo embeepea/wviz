@@ -1,0 +1,39 @@
+#! /usr/bin/env node
+// -*-mode: js2-*-
+
+var sprintf = require('sprintf');
+var upstream = require('./upstream.js');
+var parseMesh = require('./mesh.js');
+var fs = require('fs');
+
+fs.readFile('./data/dem3.mesh', { encoding: 'utf8' }, function(err, data) {
+    var m = parseMesh(data);
+    var uv = [14,84];
+    var upoints = upstream.upStreamPoints(uv, m);
+    console.log(sprintf("upoints (length %1d):",upoints.length));
+    upoints.forEach(function(uv) {
+        var xy = m.uv_to_xy(uv);
+        console.log(sprintf("  [%1d,%1d] / [%.4f,%.4f]", uv[0], uv[1], xy[0], xy[1]));
+    });
+    var mp = upstream.multiPolygonFromPoints(upoints, m, 0);
+    var p = mp.polygons();
+    console.log("polygon verts:");
+    p.vertices.forEach(function(v,i) {
+        console.log(sprintf("  %2d: [%.4f,%.4f]", i, v[0], v[1]));
+    });
+    console.log("polygon faces:");
+    p.faces.forEach(function(f,i) {
+        console.log(sprintf("  [ %s ]", f.join(", ")));
+    });
+
+    console.log("bdy polylines:");
+    var b = mp.bdy();
+    b.polylines.forEach(function(pl) {
+        console.log('  polyline: [');
+        pl.forEach(function(v) {
+            console.log(sprintf("    [%.4f,%.4f]", v[0], v[1]));
+        });
+        console.log('  ]');
+    });
+
+});

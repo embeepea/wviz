@@ -175,10 +175,10 @@ function load(meshURL, settings, callback) {
             var baseArrowObj = new THREE.Mesh(baseArrowGeom, arrowMat);
             ////
 
-            var flatTextureContext =
-                    TextureCanvas.TextureCanvas(settings.terrain.txSize,
-                                                settings.terrain.txSize,
-                                                m.xMin, m.xMax, m.yMin, m.yMax);
+            //var flatTextureContext =
+            //        TextureCanvas.TextureCanvas(settings.terrain.txSize,
+            //                                    settings.terrain.txSize,
+            //                                    m.xMin, m.xMax, m.yMin, m.yMax);
             var quadGeom = new THREE.Geometry();
             quadGeom.vertices.push(new THREE.Vector3(m.xMin, m.yMin, settings.terrain.baseZLevel0),
                                    new THREE.Vector3(m.xMin, m.yMax, settings.terrain.baseZLevel0),
@@ -199,7 +199,8 @@ function load(meshURL, settings, callback) {
             quadGeom.computeFaceNormals();
             quadGeom.computeVertexNormals();
             var quadMat = new THREE.MeshBasicMaterial( {
-                map: flatTextureContext.texture,
+                //map: flatTextureContext.texture,
+                map: terrainTextureContext.texture,
                 side: THREE.DoubleSide,
                 shading: THREE.SmoothShading
             });
@@ -222,8 +223,8 @@ function load(meshURL, settings, callback) {
                 basePoints: basePointObj,
                 baseArrows: baseArrowObj,
                 m: m,
-                terrainTextureContext: terrainTextureContext,
-                flatTextureContext: flatTextureContext
+                terrainTextureContext: terrainTextureContext//,
+                //flatTextureContext: flatTextureContext
             });
         }
     });
