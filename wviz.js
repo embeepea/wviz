@@ -603,4 +603,10 @@ wviz.setBlueUV = function(uv) {
     }
 };
 
+wviz.setYellowUV = function(uv) {
+    if (uv) {
+        wviz.yellowDrop.moveToUV(uv[0], uv[1]);
+    }
+};
+
 module.exports = wviz;

@@ -205,6 +205,18 @@ module.exports = function(state) {
             }
         },
 
+        {
+            //seq: undefined // no kbd seq for this one
+            permalink: {
+                key: "yuv",
+                urlKey: "yuv",
+                default: null,
+                parse: parseUtils.parseIntArray,
+                toString: parseUtils.intArrayToString,
+                setState: state.wviz.setYellowUV
+            }
+        },
+
         { seq: " ",
           action: state.wviz.advanceDropOnce,
           msgfunc: function() { return "advance once"; }

@@ -71,6 +71,12 @@ wviz.addListener("uvset", function(e) {
         permalink.updateWindowURL();
     }
 });
+wviz.addListener("yuvset", function(e) {
+    if (permalink) {
+        permalink.set("yuv", e.uv);
+        permalink.updateWindowURL();
+    }
+});
 
 var kp = kbd_processor(commands,
                        function(msg) {
