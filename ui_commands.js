@@ -44,6 +44,14 @@ module.exports = function(state) {
         },
 
         {
+            seq: "dt",
+            action: function() {
+                state.nextClickDefinesYellowDotLocation = true;
+            },
+            msgfunc: function() { return "define target "; }
+        },
+
+        {
             seq: "ap",
             action: function() {
                 state.wviz.visible("basePoints", !state.wviz.visible("basePoints"));
@@ -235,9 +243,12 @@ module.exports = function(state) {
         },
 
         { seq: " ",
-          action: state.wviz.advanceDropOnce,
+          action: function() { state.wviz.advanceDropOnce(state.dropFallStep); },
           msgfunc: function() { return "advance once"; }
         },
+        { seq: ".",
+          action: function() { state.wviz.advanceAll(state.dropFallStep); },
+          msgfunc: function() { return "advance all"; } },
 
 
         { seq: "n",
@@ -331,6 +342,46 @@ module.exports = function(state) {
           }
         },
 
+        { seq: "fs",
+          action: function(a) {
+              if (a) {
+                  state.dropFallStep = a;
+                  state.permalink.set("fallStep", a);
+                  state.permalink.updateWindowURL();
+              }
+          },
+          msgfunc: function(n) { return sprintf("drop step set to %1d", n); },
+          permalink: {
+              key: "fallStep",
+              urlKey: "fs",
+              default: null,
+              parse: parseUtils.parseIInt,
+              toString: parseUtils.intToString,
+              setState: function(a) {
+                  state.dropFallStep = a;
+              }
+          }
+        },
+        { seq: "fr",
+          action: function(a) {
+              if (a) {
+                  state.wviz.setFallRate(a);
+                  state.permalink.set("fallRate", a);
+                  state.permalink.updateWindowURL();
+              }
+          },
+          msgfunc: function(n) { return sprintf("drop fall rate set to %1d", n); },
+          permalink: {
+              key: "fallRate",
+              urlKey: "fr",
+              default: null,
+              parse: parseUtils.parseIInt,
+              toString: parseUtils.intToString,
+              setState: function(a) {
+                  state.wviz.setFallRate(a);
+              }
+          }
+        },
 
 //        {
 //            seq: "al",

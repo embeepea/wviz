@@ -18,6 +18,8 @@ var state = {
     wviz: wviz,
     permalink: permalink,
     mouseDragMode: "rotate",   // or "translate"
+    nextClickDefinesYellowDotLocation: false,
+    dropFallStep: 1
     //visible: {
     //    edges: false,
     //    faces: true,
@@ -143,8 +145,13 @@ wviz.addListener("launched", function(e) {
                     // shift-left-click event
                     wviz.pick(p.x, p.y, function(x,y,z) {
                         var uv = wviz.m.xy_to_uv([x,y]);
-                        wviz.blueDrop.clearTrail();
-                        wviz.blueDrop.moveToUV(uv[0], uv[1]);
+                        if (state.nextClickDefinesYellowDotLocation) {
+                            state.nextClickDefinesYellowDotLocation = false;
+                            wviz.yellowDrop.moveToUV(uv[0], uv[1]);
+                        } else {
+                            wviz.blueDrop.clearTrail();
+                            wviz.blueDrop.moveToUV(uv[0], uv[1]);
+                        }
                         wviz.requestRender();
                     });
                 }

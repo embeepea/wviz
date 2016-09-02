@@ -46,7 +46,7 @@ wviz.settings = {
     },
     drop: {
         radius: 0.05,
-        fallSpeed: 100,
+        fallRate: 100,
         trailColor: "#0000ff",
         trailLineWidth: 8
     }
@@ -318,9 +318,32 @@ wviz.advanceDropOnce = function(a) {
             var nextUV = wviz.m.flow[wviz.blueDrop.uv[0]][wviz.blueDrop.uv[1]];
             if (nextUV) {
                 wviz.blueDrop.moveToUV(nextUV[0], nextUV[1]);
-                wviz.requestRender();
             }
         }
+        wviz.requestRender();
+    }
+};
+
+wviz.advanceAll = function(a) {
+    // arg 'a' is number of steps to take on each Frame
+    if (wviz.blueDrop.uv) {
+        function oneFrame() {
+            var b = a, nextUV;
+            var moved = false;
+            while (b--) {
+                nextUV = wviz.m.flow[wviz.blueDrop.uv[0]][wviz.blueDrop.uv[1]];
+                if (nextUV) {
+                    moved = true;
+                    wviz.blueDrop.moveToUV(nextUV[0], nextUV[1]);
+                }
+            }
+            if (moved) {
+                wviz.requestRender(function() {
+                    setTimeout(oneFrame, wviz.settings.drop.fallRate);
+                });
+            }
+        }
+        oneFrame();
     }
 };
 
@@ -466,7 +489,6 @@ function makeDrop(m, options) {
             terrainTrailTObj.add(terrainTrailObj);
             flatTrailTObj.add(flatTrailObj);
             lastTrailPoint = null;
-
         },
         txRenderTrail: function(ctx) {
             if (trailXY.length > 0) {
@@ -770,6 +792,10 @@ wviz.addCurrentYellowDropUpstreamArea = function() {
         wviz.upstreamMultiPolygons.push(mp);
     }
     wviz.textureNeedsRendering = true;
+};
+
+wviz.setFallRate = function(a) {
+    wviz.settings.drop.fallRate = a;
 };
 
 module.exports = wviz;
