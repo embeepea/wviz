@@ -44,6 +44,14 @@ module.exports = function(state) {
         },
 
         {
+            seq: "ct",
+            action: function() {
+                state.wviz.clearAllTrails();
+                state.wviz.requestRender();
+            },
+            msgfunc: function() { return "clear all trails"; }
+        },
+        {
             seq: "dt",
             action: function() {
                 state.nextClickDefinesYellowDotLocation = true;

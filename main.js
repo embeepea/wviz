@@ -153,6 +153,7 @@ wviz.addListener("launched", function(e) {
                             wviz.blueDrop.moveToUV(uv[0], uv[1]);
                         }
                         wviz.requestRender();
+                    }, function() {
                     });
                 }
                 if (event.ctrlKey && event.button === 0) {

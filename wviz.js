@@ -98,9 +98,8 @@ function txDrawGridLines(ctx) {
 };
 
 wviz._visible = {
-    terrainEdges: true,
+    terrainEdges: false,
     terrainFaces: true,
-    terrainEdges: true,
     baseFaces: true,
     basePoints: false,
     baseArrows: false,
@@ -128,10 +127,10 @@ function renderTexture() {
     //    txDrawGridLines(wviz.flatTextureContext);
     //}
 
-    //if (wviz.blueDrop && wviz.blueDrop.uv) {
-    //    wviz.blueDrop.txRenderTrail(wviz.terrainTextureContext);
+    if (wviz.blueDrop && wviz.blueDrop.uv) {
+        wviz.blueDrop.txRenderTrails(wviz.terrainTextureContext);
     //    wviz.blueDrop.txRenderTrail(wviz.flatTextureContext);
-    //}
+    }
 }
 
 function neighborUVPoints(uv, includeSelf) {
@@ -320,6 +319,9 @@ wviz.advanceDropOnce = function(a) {
                 wviz.blueDrop.moveToUV(nextUV[0], nextUV[1]);
             }
         }
+        //if (!nextUV) {
+        //    wviz.blueDrop.endTrail();
+        //}
         wviz.requestRender();
     }
 };
@@ -465,6 +467,7 @@ function makeDrop(m, options) {
         linewidth: wviz.settings.drop.trailLineWidth
     });
     var trailXY = [];
+    var trailXYs = [];
     var lastTrailPoint = null;
     var flatTrailZ = wviz.settings.terrain.baseZLevel4;
     var terrainTrailObj = new THREE.Object3D();
@@ -480,7 +483,15 @@ function makeDrop(m, options) {
         terrainTrailTObj: terrainTrailTObj,
         flatTrailTObj: flatTrailTObj,
         uv: null,
+        clearAllTrails: function() {
+            trailXYs = [];
+            wviz.textureNeedsRendering = true;
+        },
         clearTrail: function() {
+            if (trailXY) {
+                trailXYs.push(trailXY);
+                wviz.textureNeedsRendering = true;
+            }
             trailXY = [];
             terrainTrailTObj.remove(terrainTrailObj);
             flatTrailTObj.remove(flatTrailObj);
@@ -490,17 +501,21 @@ function makeDrop(m, options) {
             flatTrailTObj.add(flatTrailObj);
             lastTrailPoint = null;
         },
-        txRenderTrail: function(ctx) {
-            if (trailXY.length > 0) {
-                ctx.strokeStyle(wviz.settings.drop.trailColor);
-                ctx.lineWidth(wviz.settings.drop.trailLineWidth);
-                ctx.beginPath();
-                ctx.moveTo(trailXY[0][0], trailXY[0][1]);
-                var i;
-                for (i=1; i<trailXY.length; ++i) {
-                    ctx.lineTo(trailXY[i][0], trailXY[i][1]);
-                }
-                ctx.stroke();
+        txRenderTrails: function(ctx) {
+            if (trailXYs.length > 0) {
+                trailXYs.forEach(function(trailXY) {
+                    if (trailXY.length > 0) {
+                        ctx.strokeStyle(wviz.settings.drop.trailColor);
+                        ctx.lineWidth(wviz.settings.drop.trailLineWidth);
+                        ctx.beginPath();
+                        ctx.moveTo(trailXY[0][0], trailXY[0][1]);
+                        var i;
+                        for (i=1; i<trailXY.length; ++i) {
+                            ctx.lineTo(trailXY[i][0], trailXY[i][1]);
+                        }
+                        ctx.stroke();
+                    }
+                });
             }
         },
         moveToUV: function(u,v) {
@@ -796,6 +811,10 @@ wviz.addCurrentYellowDropUpstreamArea = function() {
 
 wviz.setFallRate = function(a) {
     wviz.settings.drop.fallRate = a;
+};
+
+wviz.clearAllTrails = function(a) {
+    wviz.blueDrop.clearAllTrails();
 };
 
 module.exports = wviz;
