@@ -198,7 +198,8 @@ function load(meshURL, settings, callback) {
             quadGeom.uvsNeedUpdate = true;
             quadGeom.computeFaceNormals();
             quadGeom.computeVertexNormals();
-            var quadMat = new THREE.MeshBasicMaterial( {
+            //var quadMat = new THREE.MeshBasicMaterial( {
+            var quadMat = new THREE.MeshPhongMaterial( {
                 //map: flatTextureContext.texture,
                 map: terrainTextureContext.texture,
                 side: THREE.DoubleSide,

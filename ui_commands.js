@@ -60,7 +60,7 @@ module.exports = function(state) {
         },
 
         {
-            seq: "ap",
+            seq: "ad",
             action: function() {
                 state.wviz.visible("basePoints", !state.wviz.visible("basePoints"));
                 state.permalink.set("basePoints", state.wviz.visible("basePoints"));
@@ -70,7 +70,7 @@ module.exports = function(state) {
             msgfunc: function() { return "3D " + (state.wviz.visible("basePoints") ? "on" : "off"); },
             permalink: {
                 key: "basePoints",
-                urlKey: "ap",
+                urlKey: "ad",
                 default: null,
                 parse: parseUtils.parseBoolean,
                 toString: parseUtils.booleanToString,

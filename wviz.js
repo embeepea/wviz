@@ -101,7 +101,7 @@ wviz._visible = {
     terrainEdges: false,
     terrainFaces: true,
     baseFaces: true,
-    basePoints: false,
+    basePoints: true,
     baseArrows: false,
     d3: true,
     d2: false,
@@ -257,6 +257,7 @@ function makeNeighborText() {
                 oneTextObj.position.set(xy[0] + textOptions.size,
                                         xy[1] + textOptions.size,
                                         wviz.settings.terrain.baseZLevel4);
+                oneTextObj.rotation.set(0,0,-Math.PI/2);
                 textObj.add(oneTextObj);
             }
         }
@@ -711,7 +712,7 @@ wviz.launch = function(canvas, width, height, commands) {
 
             wviz.d2.add(t.baseArrows);
             wviz.baseArrows = t.baseArrows;
-            wviz.baseArrows.visible = false;
+            wviz.baseArrows.visible = wviz._visible.baseArrows;
 
             renderTexture();
 
