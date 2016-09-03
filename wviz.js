@@ -33,7 +33,7 @@ wviz.settings = {
     },
     camera: {
         fov: 45,
-        position: [1,-15,15],
+        position: [-15,1,15],
         near: 0.1,
         far: 1000,
 // for essentially orthographic projection, use the following:
@@ -41,14 +41,16 @@ wviz.settings = {
 //        position: [0,0,1000],
 //        near: 0.1,
 //        far: 10000,
-        up: [0,1,0],
+        up: [0,0,1],
         lookAt: [0,0,0]
     },
     drop: {
         radius: 0.05,
         fallRate: 100,
         trailColor: "#0000ff",
-        trailLineWidth: 8
+        trailLineWidth: 8,
+        baseNeighborInnerRadius: 0.015,
+        baseNeighborOuterRadius: 0.02
     }
 };
 
@@ -133,6 +135,38 @@ function renderTexture() {
     }
 }
 
+function addCircle(geom,x,y,r,n,z) {
+    var a = Math.PI/4;
+    var da = 2*Math.PI/n;
+    var ps = [];
+    var i;
+    var k = geom.vertices.length;
+    for (i=0; i<n; ++i) {
+        geom.vertices.push(new THREE.Vector3(x+r*Math.cos(a),y+r*Math.sin(a),z));
+        a += da;
+        geom.vertices.push(new THREE.Vector3(x+r*Math.cos(a),y+r*Math.sin(a),z));
+    }
+}
+
+function addAnnulus(geom,x,y,r0,r1,n,z) {
+    var a = Math.PI/4;
+    var da = 2*Math.PI/n;
+    var ps = [];
+    var i;
+    var k = geom.vertices.length;
+    var n2 = 2*n;
+    for (i=0; i<n; ++i) {
+        geom.vertices.push(new THREE.Vector3(x+r0*Math.cos(a),y+r0*Math.sin(a),z));
+        geom.vertices.push(new THREE.Vector3(x+r1*Math.cos(a),y+r1*Math.sin(a),z));
+        a += da;
+        geom.faces.push(new THREE.Face3((k  )%n2, (k+1)%n2, (k+2)%n2),
+                        new THREE.Face3((k+2)%n2, (k+1)%n2, (k+3)%n2));
+        k += 2;
+    }
+    geom.computeFaceNormals();
+    geom.computeVertexNormals();
+}
+
 function neighborUVPoints(uv, includeSelf) {
     if (!uv) { return null; }
     var u = uv[0];
@@ -156,27 +190,46 @@ function neighborUVPoints(uv, includeSelf) {
 function makeNeighborPoints() {
     var points = neighborUVPoints(wviz.blueDrop.uv);
     if (points === null) { return null; }
-    var defaultSurfaceMaterial = new THREE.MeshPhongMaterial({
+    var defaultTerrainDropMat = new THREE.MeshPhongMaterial({
         color: 0x000000,
         side: THREE.DoubleSide,
         shading: THREE.SmoothShading
     });
-    var nextSurfaceMaterial = new THREE.MeshPhongMaterial({
+    var nextTerrainDropMat = new THREE.MeshPhongMaterial({
         color: 0x00ff00,
         side: THREE.DoubleSide,
         shading: THREE.SmoothShading
     });
-    var neighbors = new THREE.Object3D();
+    var defaultBaseDropMat = new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        side: THREE.DoubleSide
+    });
+    var nextBaseDropMat = new THREE.MeshBasicMaterial({
+        color: 0x00ff00,
+        side: THREE.DoubleSide
+    });
+    var neighbors3d = new THREE.Object3D();
+    var neighbors2d = new THREE.Object3D();
     points.forEach(function(point) {
         var xy = wviz.m.uv_to_xy(point);
         var next = wviz.m.flow[wviz.blueDrop.uv[0]][wviz.blueDrop.uv[1]];
-        var mat = (point[0]===next[0] && point[1]===next[1]) ? nextSurfaceMaterial : defaultSurfaceMaterial;
-        var sph = new THREE.SphereGeometry( wviz.settings.drop.radius/2, 8, 8 );
-        var mesh = new THREE.Mesh(sph, mat);
-        mesh.position.set(xy[0], xy[1], wviz.m.meshData[point[0]][point[1]]);
-        neighbors.add( mesh );
+        var sphGeom = new THREE.SphereGeometry( wviz.settings.drop.radius/2, 8, 8 );
+        var sphMesh = new THREE.Mesh(sphGeom, (point[0]===next[0] && point[1]===next[1]) ? nextTerrainDropMat : defaultTerrainDropMat);
+        sphMesh.position.set(xy[0], xy[1], wviz.m.meshData[point[0]][point[1]]);
+        neighbors3d.add( sphMesh );
+        var annGeom = new THREE.Geometry();
+        addAnnulus(annGeom, 0, 0, 
+                   wviz.settings.drop.baseNeighborInnerRadius,
+                   wviz.settings.drop.baseNeighborOuterRadius,
+                   12, 0);
+        var annMesh = new THREE.Mesh(annGeom, (point[0]===next[0] && point[1]===next[1]) ? nextBaseDropMat : defaultBaseDropMat);
+        annMesh.position.set(xy[0], xy[1], wviz.settings.terrain.baseZLevel4);
+        neighbors2d.add( annMesh );
     });
-    return neighbors;
+    return {
+        d2: neighbors2d,
+        d3: neighbors3d
+    };
 }
 
 function makeNeighborHeightLines() {
@@ -254,8 +307,8 @@ function makeNeighborText() {
                                                       textOptions);
                 var textMesh = new THREE.Mesh(textGeom, mat);
                 oneTextObj.add(textMesh);
-                oneTextObj.position.set(xy[0] + textOptions.size,
-                                        xy[1] + textOptions.size,
+                oneTextObj.position.set(xy[0] + 1.5*textOptions.size,
+                                        xy[1] - 1.5*textOptions.size,
                                         wviz.settings.terrain.baseZLevel4);
                 oneTextObj.rotation.set(0,0,-Math.PI/2);
                 textObj.add(oneTextObj);
@@ -268,13 +321,15 @@ function makeNeighborText() {
 wviz.showNeighborPoints = function() {
     wviz.hideNeighborPoints();
     wviz.neighborPoints = makeNeighborPoints();
-    wviz.d3.add(wviz.neighborPoints);
+    wviz.d3.add(wviz.neighborPoints.d3);
+    wviz.d2.add(wviz.neighborPoints.d2);
     wviz.requestRender();
 };
 
 wviz.hideNeighborPoints = function() {
     if (wviz.neighborPoints) {
-        wviz.d3.remove(wviz.neighborPoints);
+        wviz.d3.remove(wviz.neighborPoints.d3);
+        wviz.d2.remove(wviz.neighborPoints.d2);
     }
     wviz.neighborPoints = null;
     wviz.requestRender();
@@ -416,38 +471,6 @@ function makeDrop(m, options) {
         color: options.flatDropColor,
         side: THREE.DoubleSide
     });
-
-    function addCircle(geom,x,y,r,n,z) {
-        var a = Math.PI/4;
-        var da = 2*Math.PI/n;
-        var ps = [];
-        var i;
-        var k = geom.vertices.length;
-        for (i=0; i<n; ++i) {
-            geom.vertices.push(new THREE.Vector3(x+r*Math.cos(a),y+r*Math.sin(a),z));
-            a += da;
-            geom.vertices.push(new THREE.Vector3(x+r*Math.cos(a),y+r*Math.sin(a),z));
-        }
-    }
-
-    function addAnnulus(geom,x,y,r0,r1,n,z) {
-        var a = Math.PI/4;
-        var da = 2*Math.PI/n;
-        var ps = [];
-        var i;
-        var k = geom.vertices.length;
-        var n2 = 2*n;
-        for (i=0; i<n; ++i) {
-            geom.vertices.push(new THREE.Vector3(x+r0*Math.cos(a),y+r0*Math.sin(a),z));
-            geom.vertices.push(new THREE.Vector3(x+r1*Math.cos(a),y+r1*Math.sin(a),z));
-            a += da;
-            geom.faces.push(new THREE.Face3((k  )%n2, (k+1)%n2, (k+2)%n2),
-                            new THREE.Face3((k+2)%n2, (k+1)%n2, (k+3)%n2));
-            k += 2;
-        }
-        geom.computeFaceNormals();
-        geom.computeVertexNormals();
-    }
 
     var circlePositionObj = new THREE.Object3D();
     circlePositionObj.visible = false;
