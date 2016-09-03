@@ -67,7 +67,7 @@ module.exports = function(state) {
                 state.permalink.updateWindowURL();
                 state.wviz.requestRender();
             },
-            msgfunc: function() { return "3D " + (state.wviz.visible("basePoints") ? "on" : "off"); },
+            msgfunc: function() { return "base points " + (state.wviz.visible("basePoints") ? "on" : "off"); },
             permalink: {
                 key: "basePoints",
                 urlKey: "ad",
@@ -77,6 +77,25 @@ module.exports = function(state) {
                 setState: function(v) { state.wviz.visible("basePoints",v); }
             }
         },
+        {
+            seq: "ah",
+            action: function() {
+                state.wviz.visible("blueDropHeightLine", !state.wviz.visible("blueDropHeightLine"));
+                state.permalink.set("blueDropHeightLine", state.wviz.visible("blueDropHeightLine"));
+                state.permalink.updateWindowURL();
+                state.wviz.requestRender();
+            },
+            msgfunc: function() { return "blue drop height line " + (state.wviz.visible("blueDropHeightLine") ? "on" : "off"); },
+            permalink: {
+                key: "blueDropHeightLine",
+                urlKey: "ah",
+                default: null,
+                parse: parseUtils.parseBoolean,
+                toString: parseUtils.booleanToString,
+                setState: function(v) { state.wviz.visible("blueDropHeightLine",v); }
+            }
+        },
+
         {
             seq: "af",
             action: function() {

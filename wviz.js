@@ -41,8 +41,8 @@ wviz.settings = {
 //        position: [0,0,1000],
 //        near: 0.1,
 //        far: 10000,
-        up: [0,0,1],
-        lookAt: [0,0,0]
+        up: [0,0.1,1],
+        lookAt: [-2,0,0]
     },
     drop: {
         radius: 0.05,
@@ -105,6 +105,7 @@ wviz._visible = {
     baseFaces: true,
     basePoints: true,
     baseArrows: false,
+    blueDropHeightLine: true,
     d3: true,
     d2: false,
     axes: false
@@ -423,6 +424,8 @@ wviz.visible = function(what, v) {
             wviz.basePoints.visible = v;
         } else if (what === "baseArrows") {
             wviz.baseArrows.visible = v;
+        } else if (what === "blueDropHeightLine") {
+            wviz.blueDrop.heightLineTObj.visible = v;
         }
     }
     return wviz._visible[what];
@@ -501,11 +504,19 @@ function makeDrop(m, options) {
     terrainTrailTObj.add(terrainTrailObj);
     flatTrailTObj.add(flatTrailObj);
 
+    var heightLineMat = new THREE.LineBasicMaterial({
+        color: 0x0000ff,
+        linewidth: 3
+    });
+    var heightLineObjContainer = new THREE.Object3D();
+    var heightLineObj;
+
     return {
         terrainDropObj: spherePositionObj,
         flatDropObj: circlePositionObj,
         terrainTrailTObj: terrainTrailTObj,
         flatTrailTObj: flatTrailTObj,
+        heightLineTObj: heightLineObjContainer,
         uv: null,
         clearAllTrails: function() {
             trailXYs = [];
@@ -555,6 +566,14 @@ function makeDrop(m, options) {
             circlePositionObj.visible = true;
             circlePositionObj.position.set(x,y,options.baseZ);
             //wviz.textureNeedsRendering = true;
+            if (heightLineObj) { 
+                heightLineObjContainer.remove(heightLineObj);
+            }
+            var heightLineGeom = new THREE.Geometry();
+            heightLineGeom.vertices.push(new THREE.Vector3(x,y,options.baseZ));
+            heightLineGeom.vertices.push(new THREE.Vector3(x,y,m.meshData[u][v]));
+            heightLineObj = new THREE.LineSegments(heightLineGeom, heightLineMat);
+            heightLineObjContainer.add(heightLineObj);
             if (lastTrailPoint) {
                 var terrainTrailGeom = new THREE.Geometry();
                 var flatTrailGeom = new THREE.Geometry();
@@ -717,6 +736,7 @@ wviz.launch = function(canvas, width, height, commands) {
                 eventType: "uvset"
             });
             wviz.d3.add( wviz.blueDrop.terrainDropObj );
+            wviz.d3.add( wviz.blueDrop.heightLineTObj );
             wviz.d2.add( wviz.blueDrop.flatDropObj );
             zNudged3DEdges.add( wviz.blueDrop.terrainTrailTObj );
             zNudged2DEdges.add( wviz.blueDrop.flatTrailTObj );
