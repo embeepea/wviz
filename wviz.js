@@ -711,6 +711,7 @@ wviz.launch = function(canvas, width, height, commands) {
 
             wviz.d2.add(t.baseArrows);
             wviz.baseArrows = t.baseArrows;
+            wviz.baseArrows.visible = false;
 
             renderTexture();
 
