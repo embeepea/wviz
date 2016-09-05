@@ -111,9 +111,38 @@ module.exports = function(state) {
                 default: null,
                 parse: parseUtils.parseBoolean,
                 toString: parseUtils.booleanToString,
-                setState: function(v) { state.wviz.visible("faces",v); }
+                setState: function(v) {
+                    state.wviz.visible("terrainFaces",v);
+                }
             }
         },
+
+        {
+            seq: "am",
+            action: function() {
+                if (!state.displayMessages) {
+                    state.displayMessages = true;
+                    state.displayMessage("messages on");
+                } else {
+                    state.displayMessage("messages off");
+                    state.displayMessages = false;
+                }
+            }
+        },
+
+        {
+            seq: "v",
+            action: function() {
+                state.wviz.transitionToState({
+                    c:"-1.4394,-0.4492,1.0447",
+                    mm:"3.6769,0.3449,1.4969,2.3434,-0.5161,3.9348,0.3610,-0.3343,-1.4469,-0.5270,3.6753,-6.8310,0.0000,0.0000,0.0000,1.0000",
+                    ae:"1",
+                    af:"1",
+                    d2:"0"
+                }, state.permalink);
+            }
+        },
+
         {
             seq: "ae",
             action: function() {

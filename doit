@@ -2,38 +2,45 @@
 // -*-mode: js2-*-
 
 var sprintf = require('sprintf');
-var upstream = require('./upstream.js');
-var parseMesh = require('./mesh.js');
-var fs = require('fs');
+var THREE = require('./libs/threejs/three.js');
+var qinterp = require('./qinterp.js');
+var debug = require('./debug.js');
 
-fs.readFile('./data/dem3.mesh', { encoding: 'utf8' }, function(err, data) {
-    var m = parseMesh(data);
-    var uv = [14,84];
-    var upoints = upstream.upStreamPoints(uv, m);
-    console.log(sprintf("upoints (length %1d):",upoints.length));
-    upoints.forEach(function(uv) {
-        var xy = m.uv_to_xy(uv);
-        console.log(sprintf("  [%1d,%1d] / [%.4f,%.4f]", uv[0], uv[1], xy[0], xy[1]));
-    });
-    var mp = upstream.multiPolygonFromPoints(upoints, m, 0);
-    var p = mp.polygons();
-    console.log("polygon verts:");
-    p.vertices.forEach(function(v,i) {
-        console.log(sprintf("  %2d: [%.4f,%.4f]", i, v[0], v[1]));
-    });
-    console.log("polygon faces:");
-    p.faces.forEach(function(f,i) {
-        console.log(sprintf("  [ %s ]", f.join(", ")));
-    });
+//   this.matrix.compose( this.position, this.quaternion, this.scale );
 
-    console.log("bdy polylines:");
-    var b = mp.bdy();
-    b.polylines.forEach(function(pl) {
-        console.log('  polyline: [');
-        pl.forEach(function(v) {
-            console.log(sprintf("    [%.4f,%.4f]", v[0], v[1]));
-        });
-        console.log('  ]');
-    });
+// mm=0.9995,-0.0306,0.0050,0.0760,0.0307,0.9989,-0.0356,0.0413,-0.0039,0.0358,0.9994,-0.0946,0.0000,0.0000,0.0000,1.0000
+// mm=3.7258,0.2155,1.3968,2.2948,-0.3303,3.9620,0.2696,-0.8353,-1.3743,-0.3679,3.7222,-7.1421,0.0000,0.0000,0.0000,1.0000
 
-});
+var m0 = new THREE.Matrix4();
+m0.set(0.9995,-0.0306,0.0050,0.0760,0.0307,0.9989,-0.0356,0.0413,-0.0039,0.0358,0.9994,-0.0946,0.0000,0.0000,0.0000,1.0000);
+
+var m1 = new THREE.Matrix4();
+m1.set(3.7258,0.2155,1.3968,2.2948,-0.3303,3.9620,0.2696,-0.8353,-1.3743,-0.3679,3.7222,-7.1421,0.0000,0.0000,0.0000,1.0000);
+
+var intp = qinterp.matrix4Interpolator(m0, m1);
+
+debug.showMatrix('m0', m0);
+debug.showMatrix('m', intp(0.5));
+debug.showMatrix('m1', m1);
+
+// var d0 = decompose(m0);
+// var d1 = decompose(m1);
+// 
+// var di = lerp(d0, d1, 1);
+// 
+// console.log(d0);
+// console.log(di);
+// console.log(d1);
+// 
+// // //q0.setFromRotationMatrix(m0);
+// // //p0.setFromMatrixPosition(m0);
+// // //s0.setFromMatrixScale(m0);
+// // 
+// // console.log(q0);
+// // console.log(p0);
+// // console.log(s0);
+// // 
+// // var m00 = new THREE.Matrix4();
+// // m00.compose(p0,q0,s0);
+// // 
+// // debug.showMatrix('m00', m00);

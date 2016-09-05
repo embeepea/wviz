@@ -5,6 +5,8 @@ var event_emitter = require('./event_emitter.js');
 var axes = require('./axes.js');
 var terrain = require('./terrain.js');
 var upstream = require('./upstream.js');
+var qinterp = require('./qinterp.js');
+var parseUtils = require('./parseUtils.js');
 
 var wviz = {};
 window.wviz = wviz;
@@ -861,5 +863,40 @@ wviz.setFallRate = function(a) {
 wviz.clearAllTrails = function(a) {
     wviz.blueDrop.clearAllTrails();
 };
+
+wviz.mmAnimateTo = function(m, nFrames, frameDelay, doneFunc) {
+    var intp = qinterp.matrix4Interpolator(wviz.world.matrix, m);
+    var t = 0;
+    var n = 0;
+    var dt = 1.0/nFrames;
+    function doFrame() {
+        setTimeout(function() {
+            ++n;
+            t = n*dt;
+            m = intp(t);
+            wviz.world.matrix.copy(m);
+            wviz.world.matrixWorldNeedsUpdate = true;
+            wviz.requestRender();
+            if (n < nFrames) {
+                doFrame();
+            } else {
+                doneFunc();
+            }
+        }, frameDelay);
+    }
+    doFrame();
+};
+
+wviz.transitionToState = function(state, permalink) {
+    if ("mm" in state) {
+        wviz.mmAnimateTo(parseUtils.parseMatrix4(state.mm), 36, 50, function() {
+            permalink.setState(state);
+        });
+    } else {
+        permalink.setState(state);
+    }
+};
+
+
 
 module.exports = wviz;

@@ -12,6 +12,8 @@ var width, height, canvas;
 var Permalink = require('./Permalink.js');
 window.debug = require('./debug.js');
 
+window.wviz = wviz;
+
 var permalink = null;
 
 var state = {
@@ -19,7 +21,8 @@ var state = {
     permalink: permalink,
     mouseDragMode: "rotate",   // or "translate"
     nextClickDefinesYellowDotLocation: false,
-    dropFallStep: 1
+    dropFallStep: 1,
+    displayMessages: true
     //visible: {
     //    edges: false,
     //    faces: true,
@@ -46,12 +49,14 @@ function displayMessage(msg) {
     if (msg==="" || typeof(msg)==="undefined") {
         hideMessage();
     } else {
+        if (!state.displayMessages) { return; }
         $('#message').attr("style","");
         $('#message').removeClass("display-none");
         $('#message').addClass("display-block");
         $('#message').html(msg);
     }
 }
+state.displayMessage = displayMessage;
 
 function hideMessage() {
     $('#message').attr("style","");
@@ -92,6 +97,7 @@ var kp = kbd_processor(commands,
 wviz.addListener("launched", function(e) {
     state.permalink = Permalink(URL({url: window.location.toString()}), commands);
     permalink = state.permalink;
+    window.permalink = permalink;
     var moving = wviz.world;
     var center = wviz.axes;
     var frame  = wviz.camera;
