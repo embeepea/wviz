@@ -125,10 +125,10 @@ wviz.addListener("launched", function(e) {
         mouseDown: function(p) {
             wviz.pick(p.x, p.y, function(x,y,z) {
                 center.position.set(x,y,z);
-                if (permalink) {
-                    permalink.set("center", [x,y,z]);
-                    permalink.updateWindowURL();
-                }
+                //if (permalink) {
+                //    permalink.set("center", [x,y,z]);
+                //    permalink.updateWindowURL();
+                //}
                 wviz.requestRender();
             });
         },
@@ -201,10 +201,10 @@ wviz.addListener("launched", function(e) {
             var s;
             wviz.pick(p.x, p.y, function(x,y,z) {
                 center.position.set(x,y,z);
-                if (permalink) {
-                    permalink.set("center", [x,y,z]);
-                    permalink.updateWindowURL();
-                }
+                //if (permalink) {
+                //    permalink.set("center", [x,y,z]);
+                //    permalink.updateWindowURL();
+                //}
             });
             s = Math.exp(delta/20.0);
             var R = new THREE.Matrix4().makeScale(s,s,s);

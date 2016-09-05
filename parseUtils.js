@@ -56,8 +56,9 @@ module.exports = {
                 var a = str.split(/,/).map(function(s) { return parseInt(s,10); });
                 if (a.length > 0) { return a; }
             }
+            return null;
         }
-        return null;
+        return str;
     },
 
     intArrayToString: function(a) {
@@ -100,6 +101,32 @@ module.exports = {
     scaleTargetToString: function(m) {
         if (m === "drop" || m === "d") { return "d"; }
         return "w";
+    },
+
+    parseTrails: function(str) {
+        if (typeof(str)==="string") {
+            if (str!=="") {
+                return str.split(/;/).map(function(trString) {
+                    var a = trString.split(/,/).map(function(is) { return parseInt(is,10); });
+                    return {
+                        start: [a[0], a[1]],
+                        length: a[2]
+                    };
+                });
+            }
+            return [];
+        }
+        return str;
+    },
+
+    trailsToString: function(trails) {
+        if (trails.length === 0) { return ""; }
+        return trails.map(function(tr) {
+            if (tr) {
+                return sprintf("%1d,%1d,%1d", tr.start[0], tr.start[1], tr.length);
+            }
+            return "";
+        }).join(";");
     }
 
 };

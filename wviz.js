@@ -107,7 +107,7 @@ wviz._visible = {
     baseFaces: true,
     basePoints: true,
     baseArrows: false,
-    blueDropHeightLine: true,
+    blueDropHeightLine: false,
     d3: true,
     d2: false,
     axes: false
@@ -510,7 +510,7 @@ function makeDrop(m, options) {
         linewidth: 3
     });
     var heightLineObjContainer = new THREE.Object3D();
-    heightLineObjContainer.visible = true;
+    heightLineObjContainer.visible = false;
     var heightLineObj;
 
     return {
@@ -520,6 +520,47 @@ function makeDrop(m, options) {
         flatTrailTObj: flatTrailTObj,
         heightLineTObj: heightLineObjContainer,
         uv: null,
+        getTrails: function() {
+            function serializeTrail(trailXY) {
+                if (!trailXY) { return null; }
+                if (trailXY.length===0) { return null; }
+                var uv = m.xy_to_uv([trailXY[0][0], trailXY[0][1]]);
+                return {
+                    start: uv,
+                    length: trailXY.length
+                };
+            }
+            var ans = [ serializeTrail(trailXY) ];
+            trailXYs.map(serializeTrail).filter(function(s) { return s!==null; }).forEach(function(s) {
+                ans.push(s);
+            });
+            return ans;
+        },
+        setTrails: function(trails) {
+            this.clearTrail();
+            this.clearAllTrails();
+            var thisDrop = this;
+            function trace(tr) {
+                thisDrop.clearTrail();
+                thisDrop.moveToUV(tr.start[0], tr.start[1]);
+                var i;
+                for (i=1; i<tr.length; ++i) {
+                    var nextUV = m.flow[thisDrop.uv[0]][thisDrop.uv[1]];
+                    if (nextUV) {
+                        thisDrop.moveToUV(nextUV[0], nextUV[1]);
+                    }
+                }
+            }
+            // `trails` is an array of objects like { start: [177,84], length: 232 }
+            // the first element in `trails` is the 'current' trailXY
+            // the other elements in `trails` are the other trailXYs
+            // first trace out these other trailXYs:
+            trails.slice(1).forEach(trace);
+            // then trace out the current trailXY, if non-null
+            if (trails.length > 0 && trails[0]) { trace(trails[0]); }
+            wviz.textureNeedsRendering = true;
+            wviz.requestRender();
+        },
         clearAllTrails: function() {
             trailXYs = [];
             wviz.textureNeedsRendering = true;
@@ -775,6 +816,7 @@ wviz.launch = function(canvas, width, height, commands) {
 
 wviz.setBlueUV = function(uv) {
     if (uv) {
+        wviz.blueDrop.clearTrail();
         wviz.blueDrop.moveToUV(uv[0], uv[1]);
     } else {
         wviz.blueDrop.hide();
@@ -915,6 +957,33 @@ wviz.transitionToState = function(state, permalink) {
     }
 };
 
+//wviz.getBlueTrailsString = function() {
+//    var trails = wviz.blueDrop.getTrails();
+//    return trails.map(function(tr) {
+//        if (tr) {
+//            return sprintf("%1d,%1d,%1d", tr.start[0], tr.start[1], tr.length);
+//        }
+//        return "";
+//    }).join(";");
+//};
+//
+//wviz.setBlueTrailsFromString = function(s) {
+//    var trails = s.split(/;/).map(function(trString) {
+//        var a = trString.split(/,/).map(function(is) { return parseInt(is,10); });
+//        return {
+//            start: [a[0], a[1]],
+//            length: a[2]
+//        };
+//    });
+//    wviz.blueDrop.setTrails(trails);
+//};
 
+wviz.getBlueTrails = function() {
+    return wviz.blueDrop.getTrails();
+};
+
+wviz.setBlueTrails = function(trails) {
+    wviz.blueDrop.setTrails(trails);
+};
 
 module.exports = wviz;

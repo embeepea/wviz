@@ -30,22 +30,15 @@ module.exports = function(state) {
         {
             //seq: undefined // no kbd seq for this one
             permalink: {
-                key: "center",
-                urlKey: "c",
+                key: "trs",
+                urlKey: "trs",
                 default: null,
-                parse: parseUtils.parseFloatArray,
-                toString: parseUtils.floatArrayToString,
-                //setState: function(c) { state.wviz.setCenter(c); } // using anon fn because state.wviz.setCenter not defined til later
-                setState: function(c) {
-                    if (c) {
-                        state.wviz.axes.position.set(c[0], c[1], c[2]);
-                    }
+                parse: parseUtils.parseTrails,
+                toString: parseUtils.trailsToString,
+                setState: function(trails) {
+                    state.wviz.setBlueTrails(trails);
                 },
-                getState: function() {
-                    return [state.wviz.axes.position.x,
-                            state.wviz.axes.position.y,
-                            state.wviz.axes.position.z];
-                }
+                getState: function() { return state.wviz.getBlueTrails(); }
             }
         },
 
@@ -144,11 +137,24 @@ module.exports = function(state) {
             action: function(a) {
                 var states = [
                     null,
+                    // 1: initial view of terrain from above:
+                    {"mm":"1.0000,0.0000,0.0000,0.0000,0.0000,1.0000,0.0000,0.0000,0.0000,0.0000,1.0000,0.0000,0.0000,0.0000,0.0000,1.0000","ad":"1","ah":"0","af":"1","ae":"0","aa":"0","d3":"1","d2":"0","dm":"r","ac":"0","uv":"","yuv":"","n":"0","h":"0","x":"0","fs":"1","fr":"100"},
 
+                    // 2: close-up of single drop near edge, showing grid below and single height line
+                    {"mm":"1.8520,0.1935,1.0073,7.9039,-0.3381,2.0780,0.2224,1.6035,-0.9684,-0.3554,1.8487,-3.5956,0.0000,0.0000,0.0000,1.0000","ad":"1","ah":"1","af":"1","ae":"1","aa":"0","d3":"1","d2":"1","dm":"r","ac":"0","uv":"4,103","yuv":"","n":"0","h":"0","x":"0","fs":"1","fr":"100"},
+
+                    // 3: closer close-up of same point, with neighbor points and height lines turned on
+                    {"mm":"2.9884,0.2415,1.4265,19.4095,-0.4420,3.2695,0.3724,2.2451,-1.3776,-0.5251,2.9749,-7.2743,0.0000,0.0000,0.0000,1.0000","ad":"1","ah":"1","af":"1","ae":"1","aa":"0","d3":"1","d2":"1","dm":"t","ac":"0","uv":"4,103","yuv":"","n":"1","h":"1","x":"0","fs":"1","fr":"100"},
+
+                    // 4:
+                    {"mm":"2.9884,0.2415,1.4265,19.4095,-0.4420,3.2695,0.3724,2.2451,-1.3776,-0.5251,2.9749,-7.2743,0.0000,0.0000,0.0000,1.0000","trs":"4,103,2;4,103,1","ad":"1","ah":"1","af":"1","ae":"1","aa":"0","d3":"1","d2":"1","dm":"t","ac":"0","uv":"3,102","yuv":"","n":"1","h":"1","x":"0","fs":"1","fr":"100"}
+
+/*
                     {"mm":"3.0306,0.4557,1.2771,17.1629,-0.6085,3.2515,0.2838,-5.7529,-1.2118,-0.4932,3.0515,-10.9077,0.0000,0.0000,0.0000,1.0000","c":"-9.2428,0.3448,1.2775","ad":"1","ah":"1","af":"0","ae":"1","aa":"0","d3":"1","d2":"0","dm":"r","ac":"0","uv":"","yuv":"","n":"0","h":"0","x":"0","fs":"1","fr":"100"},
                     {"mm":"0.7970,0.0971,-0.5959,7.5708,-0.1611,0.9855,-0.0550,-2.2737,0.5819,0.1397,0.8011,-9.2766,0.0000,0.0000,0.0000,1.0000","c":"-2.7809,-4.5933,2.2342","ad":"1","ah":"1","af":"1","ae":"0","aa":"0","d3":"1","d2":"0","dm":"r","ac":"0","uv":"","yuv":"","n":"0","h":"0","x":"0","fs":"1","fr":"100"},
                     {"mm":"7.4444,1.2414,3.1166,71.4568,-1.7511,7.9099,1.0305,-30.3930,-2.8610,-1.6090,7.4769,-32.2109,0.0000,0.0000,0.0000,1.0000","c":"-9.5462,1.9513,-0.5000","ad":"1","ah":"1","af":"1","ae":"1","aa":"0","d3":"1","d2":"1","dm":"r","ac":"0","uv":"2,148","yuv":"","n":"0","h":"0","x":"0","fs":"1","fr":"100"},
                     {"mm":"15.7599,2.6281,6.5979,149.2069,-3.7070,16.7452,2.1816,-66.4220,-6.0567,-3.4063,15.8285,-54.6619,0.0000,0.0000,0.0000,1.0000","c":"-9.4724,2.0571,-0.5000","ad":"1","ah":"1","af":"1","ae":"1","aa":"0","d3":"1","d2":"1","dm":"r","ac":"0","uv":"2,148","yuv":"","n":"1","h":"1","x":"0","fs":"1","fr":"100"}
+*/
 
 
 //                    {
@@ -365,11 +371,19 @@ module.exports = function(state) {
         },
 
         { seq: " ",
-          action: function() { state.wviz.advanceDropOnce(state.dropFallStep); },
+          action: function() {
+              state.wviz.advanceDropOnce(state.dropFallStep);
+              state.permalink.set("trs", state.wviz.getBlueTrails());
+              state.permalink.updateWindowURL();
+          },
           msgfunc: function() { return "advance once"; }
         },
         { seq: ".",
-          action: function() { state.wviz.advanceAll(state.dropFallStep); },
+          action: function() {
+              state.wviz.advanceAll(state.dropFallStep);
+              state.permalink.set("trs", state.wviz.getBlueTrails());
+              state.permalink.updateWindowURL();
+          },
           msgfunc: function() { return "advance all"; } },
 
 
@@ -521,6 +535,27 @@ module.exports = function(state) {
           }
         },
 
+//        {
+//            //seq: undefined // no kbd seq for this one
+//            permalink: {
+//                key: "center",
+//                urlKey: "c",
+//                default: null,
+//                parse: parseUtils.parseFloatArray,
+//                toString: parseUtils.floatArrayToString,
+//                //setState: function(c) { state.wviz.setCenter(c); } // using anon fn because state.wviz.setCenter not defined til later
+//                setState: function(c) {
+//                    if (c) {
+//                        state.wviz.axes.position.set(c[0], c[1], c[2]);
+//                    }
+//                },
+//                getState: function() {
+//                    return [state.wviz.axes.position.x,
+//                            state.wviz.axes.position.y,
+//                            state.wviz.axes.position.z];
+//                }
+//            }
+//        },
 //        {
 //            seq: "al",
 //            action: function() {
