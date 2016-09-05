@@ -1,18 +1,40 @@
 var sprintf = require('sprintf');
 var THREE = require('./libs/threejs/three.js');
 var MultiPolygon = require('./MultiPolygon.js');
+var arrow = require('./arrow.js');
+
+//function upStreamPoints(uv, m) {
+//    var points = [];
+//    var marked = {};
+//    function dfs(uv) {
+//        var key = uv[0] + "," + uv[1];
+//        if (marked[key]) { return; }
+//        marked[key] = true;
+//        points.push(uv);
+//        m.invFlow[uv[0]][uv[1]].forEach(dfs);
+//    }
+//    dfs(uv);
+//    return points;
+//}
 
 function upStreamPoints(uv, m) {
     var points = [];
     var marked = {};
-    function dfs(uv) {
-        var key = uv[0] + "," + uv[1];
-        if (marked[key]) { return; }
-        marked[key] = true;
+    var q = [];
+    var key = uv[0] + "," + uv[1];
+    q.push(uv);
+    marked[key] = true;
+    while (q.length > 0) {
+        uv = q.shift();
         points.push(uv);
-        m.invFlow[uv[0]][uv[1]].forEach(dfs);
+        m.invFlow[uv[0]][uv[1]].forEach(function(uv) {
+            key = uv[0] + "," + uv[1];
+            if (!marked[key]) {
+                q.push(uv);
+                marked[key] = true;
+            }
+        });
     }
-    dfs(uv);
     return points;
 }
 
@@ -54,9 +76,24 @@ function multiPolygonFromPoints(points, m, zOffset) {
     return mp;
 }
 
+function flowArrow(uv, m, upoints) {
+    var xys = upoints.slice(0,25).map(m.uv_to_xy);
+    var i;
+    var p = [0,0];
+    for (i=0; i<xys.length; ++i) {
+        p[0] += xys[i][0];
+        p[1] += xys[i][1];
+    }
+    p[0] /= xys.length;
+    p[1] /= xys.length;
+    var a = arrow.farrow(m.uv_to_xy(uv), p, m.isEdge(uv), 2.0, 0.5, 0.5, 0.15);
+    return a;
+}
+
 module.exports = {
     upStreamPoints: upStreamPoints,
     meshMidpoint: meshMidpoint,
-    multiPolygonFromPoints: multiPolygonFromPoints
+    multiPolygonFromPoints: multiPolygonFromPoints,
+    flowArrow: flowArrow
     //multiPolygonToObj3: multiPolygonToObj3
 };

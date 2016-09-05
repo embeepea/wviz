@@ -21,6 +21,11 @@ function unit(v) {
 }
 
 function arrow(t, h, a, b, c) {
+    // t = position of tail
+    // h = position of head
+    // a = length of head
+    // b = half width of head
+    // c = half width of shaft
     var v = sub(h,t);
     var u = unit(v);
     var w = sub(h,smul(u,a));
@@ -29,10 +34,13 @@ function arrow(t, h, a, b, c) {
     var m2 = add(w,smul(uperp,-c));
     var n1 = add(t,smul(uperp,c));
     var n2 = add(t,smul(uperp,-c));
+    var l1 = add(w,smul(uperp,b));
+    var l2 = add(w,smul(uperp,-b));
     var ans = {
-        headFaces: [[add(w,smul(uperp,b)),h,add(w,smul(uperp,-b))]],
+        headFaces: [[l1,h,l2]],
         shaftFaces: [[n2, n1, m2], [m1, m2, n1]],
-        shaftLines: [[t,w]]
+        shaftLines: [[t,w]],
+        perimeter: [h, l1, m1, n1, n2, m2, l2]
     };
     return ans;
 }
@@ -44,7 +52,17 @@ function garrow(t, h, g, a, b, c) {
     return ans;
 }
 
+function farrow(t, h, isEdge, l, a, b, c) {
+    var u = unit(sub(t,h));
+    if (isEdge) {
+        return arrow(add(h, smul(u,-l)), h, a, b, c);
+    } else {
+        return arrow(add(h, smul(u,-l/2)), add(h, smul(u,l/2)), a, b, c);
+    }
+}
+
 module.exports = {
     arrow: arrow,
-    garrow: garrow
+    garrow: garrow,
+    farrow: farrow
 };

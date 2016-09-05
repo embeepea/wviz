@@ -64,6 +64,41 @@ function txClear(ctx) {
     ctx.fillRect(-10,-10,20,20);
 };
 
+function txDrawUpstreamFlowArrows(ctx) {
+    if (!wviz.upstreamFlowArrows) { return; }
+    ctx.fillStyle("#ffff00");
+    wviz.upstreamFlowArrows.forEach(function(fa) {
+        ctx.beginPath();
+        fa.perimeter.forEach(function(xy,i) {
+            if (i===0) {
+                ctx.moveTo(xy[0],xy[1]);
+            } else {
+                ctx.lineTo(xy[0],xy[1]);
+            }
+        });
+        ctx.closePath();
+        ctx.fill();
+    });
+}
+
+function txDrawUpstreamFlowArrowBoundaries(ctx) {
+    if (!wviz.upstreamFlowArrows) { return; }
+    ctx.fillStyle("#000000");
+    ctx.lineWidth(1);
+    wviz.upstreamFlowArrows.forEach(function(fa) {
+        ctx.beginPath();
+        fa.perimeter.forEach(function(xy,i) {
+            if (i===0) {
+                ctx.moveTo(xy[0],xy[1]);
+            } else {
+                ctx.lineTo(xy[0],xy[1]);
+            }
+        });
+        ctx.closePath();
+        ctx.stroke();
+    });
+}
+
 function txDrawGridPoints(ctx) {
     var u,v,xy;
     ctx.fillStyle("#000000");
@@ -115,13 +150,11 @@ wviz._visible = {
 
 function renderTexture() {
     txClear(wviz.terrainTextureContext);
-    //txClear(wviz.flatTextureContext);
 
     txDrawUpstreamMultiPolygons(wviz.terrainTextureContext);
-    //txDrawUpstreamMultiPolygons(wviz.flatTextureContext);
-
     txDrawUpstreamMultiPolygonBoundaries(wviz.terrainTextureContext);
-    //txDrawUpstreamMultiPolygonBoundaries(wviz.flatTextureContext);
+    txDrawUpstreamFlowArrows(wviz.terrainTextureContext);
+    txDrawUpstreamFlowArrowBoundaries(wviz.terrainTextureContext);
 
     //if (wviz._visible.gridPoints) {
     //    txDrawGridPoints(wviz.terrainTextureContext);
@@ -898,6 +931,7 @@ function txDrawUpstreamMultiPolygonBoundaries(ctx) {
 
 wviz.clearUpstreamAreas = function() {
     wviz.upstreamMultiPolygons = [];
+    wviz.upstreamFlowArrows = [];
     wviz.textureNeedsRendering = true;
 };
 
@@ -909,6 +943,10 @@ wviz.addCurrentYellowDropUpstreamArea = function() {
             wviz.upstreamMultiPolygons = [];
         }
         wviz.upstreamMultiPolygons.push(mp);
+        if (!("upstreamFlowArrows" in wviz)) {
+            wviz.upstreamFlowArrows = [];
+        }
+        wviz.upstreamFlowArrows.push(upstream.flowArrow(wviz.yellowDrop.uv, wviz.m, upoints));
     }
     wviz.textureNeedsRendering = true;
 };
@@ -926,6 +964,12 @@ wviz.clearAllTrails = function(a) {
 
 wviz.mmAnimateTo = function(m, nFrames, frameDelay, doneFunc) {
     var intp = qinterp.matrix4Interpolator(wviz.world.matrix, m);
+    if (intp.trivial) {
+        wviz.world.matrix.copy(m);
+        wviz.world.matrixWorldNeedsUpdate = true;
+        doneFunc();
+        return;
+    }
     var t = 0;
     var n = 0;
     var dt = 1.0/nFrames;
