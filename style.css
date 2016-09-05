@@ -28,3 +28,31 @@ body {
   top: 10px;
   border-radius: 15px
 }
+
+#modaloverlay {
+  position: absolute;
+  left: 20%;
+  top: 20%;
+  width: 60%;
+  height: 60%;
+  background-color: #ffffff;
+  border: 3px solid black;
+  border-radius: 25px;
+}
+
+.modaloverlay.header {
+  padding: 5px;
+  width: 100%;
+}
+
+.modaloverlay.content {
+  margin: 10px;
+  padding: 5px;
+  border: 1px solid black;
+  width: 90%;
+  height: 80%;
+}
+.modaloverlay.content textarea {
+  width: 99%;
+  height: 98%;
+}

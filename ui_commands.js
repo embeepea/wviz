@@ -23,7 +23,8 @@ module.exports = function(state) {
                         state.wviz.world.matrix.copy(m);
                         state.wviz.world.matrixWorldNeedsUpdate = true;
                     }
-                }
+                },
+                getState: function() { return state.wviz.world.matrix; }
             }
         },
         {
@@ -39,6 +40,11 @@ module.exports = function(state) {
                     if (c) {
                         state.wviz.axes.position.set(c[0], c[1], c[2]);
                     }
+                },
+                getState: function() {
+                    return [state.wviz.axes.position.x,
+                            state.wviz.axes.position.y,
+                            state.wviz.axes.position.z];
                 }
             }
         },
@@ -74,7 +80,8 @@ module.exports = function(state) {
                 default: null,
                 parse: parseUtils.parseBoolean,
                 toString: parseUtils.booleanToString,
-                setState: function(v) { state.wviz.visible("basePoints",v); }
+                setState: function(v) { state.wviz.visible("basePoints",v); },
+                getState: function() { return state.wviz.visible("basePoints"); }
             }
         },
         {
@@ -92,7 +99,8 @@ module.exports = function(state) {
                 default: null,
                 parse: parseUtils.parseBoolean,
                 toString: parseUtils.booleanToString,
-                setState: function(v) { state.wviz.visible("blueDropHeightLine",v); }
+                setState: function(v) { state.wviz.visible("blueDropHeightLine",v); },
+                getState: function() { return state.wviz.visible("blueDropHeightLine"); }
             }
         },
 
@@ -113,7 +121,8 @@ module.exports = function(state) {
                 toString: parseUtils.booleanToString,
                 setState: function(v) {
                     state.wviz.visible("terrainFaces",v);
-                }
+                },
+                getState: function() { return state.wviz.visible("terrainFaces"); }
             }
         },
 
@@ -135,48 +144,55 @@ module.exports = function(state) {
             action: function(a) {
                 var states = [
                     null,
-                    {
-                        c:"-1.4394,-0.4492,1.0447",
-                        mm:"3.6769,0.3449,1.4969,2.3434,-0.5161,3.9348,0.3610,-0.3343,-1.4469,-0.5270,3.6753,-6.8310,0.0000,0.0000,0.0000,1.0000",
-                        ae:"1",
-                        af:"1",
-                        d2:"0",
-                        x:"0"
-                    }, {
-                        c:"-9.8512,1.8242,0.2726",
-                        mm:"3.3279,-0.3770,2.1592,23.0723,0.5776,3.9376,-0.2027,-0.3018,-2.1144,0.4822,3.3430,-13.3952,0.0000,0.0000,0.0000,1.0000",
-                        ae:"1",
-                        af:"1",
-                        d2:"1",
-                        dm:"t",
-                        uv:"2,147",
-                        n:"0",
-                        h:"0",
-                        x:"0"
-                    }, {
-                        c:"-9.7789,1.7279,-0.5000",
-                        mm:"4.9400,-1.3855,3.5684,41.2550,2.1111,5.8459,-0.6528,10.8209,-3.1933,1.7214,5.0888,-25.2157,0.0000,0.0000,0.0000,1.0000",
-                        ae:"1",
-                        af:"1",
-                        d2:"1",
-                        dm:"r",
-                        uv:"2,147",
-                        n:"1",
-                        h:"1",
-                        x:"0"
-                    }, {
-                        c:"-9.8399,1.8007,-0.5000",
-                        mm:"13.4252,-0.9380,-11.7401,117.8540,1.3229,17.8097,0.0897,-18.1236,11.7031,-0.9373,13.4572,133.1182,0.0000,0.0000,0.0000,1.0000",
-                        ae:"1",
-                        af:"1",
-                        d2:"1",
-                        dm:"r",
-                        uv:"2,147",
-                        n:"1",
-                        h:"0",
-                        ah:"0",
-                        x:"1"
-                    }
+
+                    {"mm":"3.0306,0.4557,1.2771,17.1629,-0.6085,3.2515,0.2838,-5.7529,-1.2118,-0.4932,3.0515,-10.9077,0.0000,0.0000,0.0000,1.0000","c":"-9.2428,0.3448,1.2775","ad":"1","ah":"1","af":"0","ae":"1","aa":"0","d3":"1","d2":"0","dm":"r","ac":"0","uv":"","yuv":"","n":"0","h":"0","x":"0","fs":"1","fr":"100"},
+                    {"mm":"0.7970,0.0971,-0.5959,7.5708,-0.1611,0.9855,-0.0550,-2.2737,0.5819,0.1397,0.8011,-9.2766,0.0000,0.0000,0.0000,1.0000","c":"-2.7809,-4.5933,2.2342","ad":"1","ah":"1","af":"1","ae":"0","aa":"0","d3":"1","d2":"0","dm":"r","ac":"0","uv":"","yuv":"","n":"0","h":"0","x":"0","fs":"1","fr":"100"},
+                    {"mm":"7.4444,1.2414,3.1166,71.4568,-1.7511,7.9099,1.0305,-30.3930,-2.8610,-1.6090,7.4769,-32.2109,0.0000,0.0000,0.0000,1.0000","c":"-9.5462,1.9513,-0.5000","ad":"1","ah":"1","af":"1","ae":"1","aa":"0","d3":"1","d2":"1","dm":"r","ac":"0","uv":"2,148","yuv":"","n":"0","h":"0","x":"0","fs":"1","fr":"100"},
+                    {"mm":"15.7599,2.6281,6.5979,149.2069,-3.7070,16.7452,2.1816,-66.4220,-6.0567,-3.4063,15.8285,-54.6619,0.0000,0.0000,0.0000,1.0000","c":"-9.4724,2.0571,-0.5000","ad":"1","ah":"1","af":"1","ae":"1","aa":"0","d3":"1","d2":"1","dm":"r","ac":"0","uv":"2,148","yuv":"","n":"1","h":"1","x":"0","fs":"1","fr":"100"}
+
+
+//                    {
+//                        c:"-1.4394,-0.4492,1.0447",
+//                        mm:"3.6769,0.3449,1.4969,2.3434,-0.5161,3.9348,0.3610,-0.3343,-1.4469,-0.5270,3.6753,-6.8310,0.0000,0.0000,0.0000,1.0000",
+//                        ae:"1",
+//                        af:"1",
+//                        d2:"0",
+//                        x:"0"
+//                    }, {
+//                        c:"-9.8512,1.8242,0.2726",
+//                        mm:"3.3279,-0.3770,2.1592,23.0723,0.5776,3.9376,-0.2027,-0.3018,-2.1144,0.4822,3.3430,-13.3952,0.0000,0.0000,0.0000,1.0000",
+//                        ae:"1",
+//                        af:"1",
+//                        d2:"1",
+//                        dm:"t",
+//                        uv:"2,147",
+//                        n:"0",
+//                        h:"0",
+//                        x:"0"
+//                    }, {
+//                        c:"-9.7789,1.7279,-0.5000",
+//                        mm:"4.9400,-1.3855,3.5684,41.2550,2.1111,5.8459,-0.6528,10.8209,-3.1933,1.7214,5.0888,-25.2157,0.0000,0.0000,0.0000,1.0000",
+//                        ae:"1",
+//                        af:"1",
+//                        d2:"1",
+//                        dm:"r",
+//                        uv:"2,147",
+//                        n:"1",
+//                        h:"1",
+//                        x:"0"
+//                    }, {
+//                        c:"-9.8399,1.8007,-0.5000",
+//                        mm:"13.4252,-0.9380,-11.7401,117.8540,1.3229,17.8097,0.0897,-18.1236,11.7031,-0.9373,13.4572,133.1182,0.0000,0.0000,0.0000,1.0000",
+//                        ae:"1",
+//                        af:"1",
+//                        d2:"1",
+//                        dm:"r",
+//                        uv:"2,147",
+//                        n:"1",
+//                        h:"0",
+//                        ah:"0",
+//                        x:"1"
+//                    }
                 ];
                 if (a) {
                     state.wviz.transitionToState(states[a], state.permalink);
@@ -199,7 +215,8 @@ module.exports = function(state) {
                 default: null,
                 parse: parseUtils.parseBoolean,
                 toString: parseUtils.booleanToString,
-                setState: function(v) { state.wviz.visible("terrainEdges",v); }
+                setState: function(v) { state.wviz.visible("terrainEdges",v); },
+                getState: function() { return state.wviz.visible("terrainEdges"); }
             }
         },
         {
@@ -217,7 +234,8 @@ module.exports = function(state) {
                 default: null,
                 parse: parseUtils.parseBoolean,
                 toString: parseUtils.booleanToString,
-                setState: function(v) { state.wviz.visible("baseArrows",v); }
+                setState: function(v) { state.wviz.visible("baseArrows",v); },
+                getState: function() { return state.wviz.visible("baseArrows"); }
             }
         },
         {
@@ -235,7 +253,8 @@ module.exports = function(state) {
                 default: null,
                 parse: parseUtils.parseBoolean,
                 toString: parseUtils.booleanToString,
-                setState: function(v) { state.wviz.visible("d3",v); }
+                setState: function(v) { state.wviz.visible("d3",v); },
+                getState: function() { return state.wviz.visible("d3"); }
             }
         },
         {
@@ -253,7 +272,8 @@ module.exports = function(state) {
                 default: null,
                 parse: parseUtils.parseBoolean,
                 toString: parseUtils.booleanToString,
-                setState: function(v) { state.wviz.visible("d2",v); }
+                setState: function(v) { state.wviz.visible("d2",v); },
+                getState: function() { return state.wviz.visible("d2"); }
             }
         },
 
@@ -274,7 +294,8 @@ module.exports = function(state) {
                 toString: parseUtils.dragModeToString,
                 setState: function(m) {
                     state.mouseDragMode = parseUtils.parseDragMode(m);
-                }
+                },
+                getState: function() { return state.mouseDragMode; }
             }
         },
         {
@@ -293,7 +314,8 @@ module.exports = function(state) {
                 toString: parseUtils.dragModeToString,
                 setState: function(m) {
                     state.mouseDragMode = parseUtils.parseDragMode(m);
-                }
+                },
+                getState: function() { return state.mouseDragMode; }
             }
         },
         {
@@ -311,7 +333,8 @@ module.exports = function(state) {
                 default: null,
                 parse: parseUtils.parseBoolean,
                 toString: parseUtils.booleanToString,
-                setState: function(v) { state.wviz.visible("axes",v); }
+                setState: function(v) { state.wviz.visible("axes",v); },
+                getState: function() { return state.wviz.visible("axes"); }
             }
         },
 
@@ -323,7 +346,8 @@ module.exports = function(state) {
                 default: null,
                 parse: parseUtils.parseIntArray,
                 toString: parseUtils.intArrayToString,
-                setState: state.wviz.setBlueUV
+                setState: state.wviz.setBlueUV,
+                getState: state.wviz.getBlueUV
             }
         },
 
@@ -335,7 +359,8 @@ module.exports = function(state) {
                 default: null,
                 parse: parseUtils.parseIntArray,
                 toString: parseUtils.intArrayToString,
-                setState: state.wviz.setYellowUV
+                setState: state.wviz.setYellowUV,
+                getState: state.wviz.getYellowUV
             }
         },
 
@@ -368,8 +393,11 @@ module.exports = function(state) {
               setState: function(v) {
                   if (v) {
                       state.wviz.showNeighborPoints();
+                  } else {
+                      state.wviz.hideNeighborPoints();
                   }
-              }
+              },
+              getState: function() { return !!state.wviz.neighborPoints; }
           }
         },
 
@@ -393,8 +421,11 @@ module.exports = function(state) {
               setState: function(v) {
                   if (v) {
                       state.wviz.showHeightLines();
+                  } else {
+                      state.wviz.hideHeightLines();
                   }
-              }
+              },
+              getState: function() { return !!state.wviz.heightLines; }
           }
         },
 
@@ -434,8 +465,11 @@ module.exports = function(state) {
               setState: function(v) {
                   if (v) {
                       state.wviz.showText();
+                  } else {
+                      state.wviz.hideText();
                   }
-              }
+              },
+              getState: function() { return !!state.wviz.text; }
           }
         },
 
@@ -456,7 +490,8 @@ module.exports = function(state) {
               toString: parseUtils.intToString,
               setState: function(a) {
                   state.dropFallStep = a;
-              }
+              },
+              getState: function() { return state.dropFallStep; }
           }
         },
         { seq: "fr",
@@ -476,7 +511,13 @@ module.exports = function(state) {
               toString: parseUtils.intToString,
               setState: function(a) {
                   state.wviz.setFallRate(a);
-              }
+              },
+              getState: function() { return state.wviz.getFallRate(); }
+          }
+        },
+        { seq: "sss",
+          action: function() {
+              state.displayModalOverlay(JSON.stringify(state.constructState()));
           }
         },
 

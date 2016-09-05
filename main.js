@@ -72,6 +72,26 @@ function fadeMessage(msg) {
     });
 }
 
+function displayModalOverlay(msg) {
+    if (msg==="" || typeof(msg)==="undefined") {
+        hideModalOverlay();
+    } else {
+        if (!state.displayMessages) { return; }
+        $('#modaloverlay').attr("style","");
+        $('#modaloverlay').removeClass("display-none");
+        $('#modaloverlay').addClass("display-block");
+        $('.modaloverlay.content textarea').html(msg);
+    }
+}
+state.displayModalOverlay = displayModalOverlay;
+
+function hideModalOverlay() {
+    $('#modaloverlay').attr("style","");
+    $('#modaloverlay').removeClass("display-block");
+    $('#modaloverlay').addClass("display-none");
+    $('#modaloverlay.content textarea').html("");
+}
+
 wviz.addListener("uvset", function(e) {
     if (permalink) {
         permalink.set("uv", e.uv);
@@ -203,10 +223,24 @@ wviz.addListener("launched", function(e) {
     });
 });
 
+function constructState() {
+    var st = {};
+    commands.forEach(function(cmd) {
+        if (cmd.permalink && cmd.permalink.urlKey) {
+            st[cmd.permalink.urlKey] = cmd.permalink.toString(cmd.permalink.getState());
+        }
+    });
+    return st;
+}
+state.constructState = constructState;
+
 $(document).ready(function() {
     var $canvas = $('#thecanvas');
     width = $canvas.width();
     height = $canvas.height();
     canvas = $canvas[0];
+    $(".modaloverlay.header button").click(function() {
+        hideModalOverlay();
+    });
     wviz.launch(canvas, width, height, commands);
 });

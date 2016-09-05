@@ -52,14 +52,20 @@ module.exports = {
 
     parseIntArray: function(str) {
         if (typeof(str) === "string") {
-            return str.split(/,/).map(function(s) { return parseInt(s,10); });
-        } else {
-            return str;
+            if (str) {
+                var a = str.split(/,/).map(function(s) { return parseInt(s,10); });
+                if (a.length > 0) { return a; }
+            }
         }
+        return null;
     },
 
     intArrayToString: function(a) {
-        return a.map(function(x) { return sprintf("%1d", x); }).join(",");
+        if (a) {
+            return a.map(function(x) { return sprintf("%1d", x); }).join(",");
+        } else {
+            return "";
+        }
     },
 
     parseIInt: function(str) {

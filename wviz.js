@@ -486,11 +486,10 @@ function makeDrop(m, options) {
                12, 0);
     var circleScaleObj = new THREE.Mesh(circleGeom, flatDropMat);
     circlePositionObj.add(circleScaleObj);
-    circlePositionObj.visible = false;
 
-    var flatDropObj = new THREE.Object3D();
-    flatDropObj.add(circlePositionObj);
-    flatDropObj.visible = true;
+    //var flatDropObj = new THREE.Object3D();
+    //flatDropObj.add(circlePositionObj);
+    //flatDropObj.visible = true;
     var trailMat = new THREE.LineBasicMaterial({
         color: 0x0000ff,
         linewidth: wviz.settings.drop.trailLineWidth
@@ -511,6 +510,7 @@ function makeDrop(m, options) {
         linewidth: 3
     });
     var heightLineObjContainer = new THREE.Object3D();
+    heightLineObjContainer.visible = true;
     var heightLineObj;
 
     return {
@@ -554,6 +554,11 @@ function makeDrop(m, options) {
                     }
                 });
             }
+        },
+        hide: function() {
+            spherePositionObj.visible = false;
+            circlePositionObj.visible = false;
+            heightLineObjContainer.visible = false;
         },
         moveToUV: function(u,v) {
             this.uv = [u,v];
@@ -771,13 +776,23 @@ wviz.launch = function(canvas, width, height, commands) {
 wviz.setBlueUV = function(uv) {
     if (uv) {
         wviz.blueDrop.moveToUV(uv[0], uv[1]);
+    } else {
+        wviz.blueDrop.hide();
     }
+};
+wviz.getBlueUV = function() {
+    return wviz.blueDrop.uv;
 };
 
 wviz.setYellowUV = function(uv) {
     if (uv) {
         wviz.yellowDrop.moveToUV(uv[0], uv[1]);
+    } else {
+        wviz.yellowDrop.hide();
     }
+};
+wviz.getYellowUV = function() {
+    return wviz.yellowDrop.uv;
 };
 
 function txDrawUpstreamMultiPolygons(ctx) {
@@ -858,6 +873,9 @@ wviz.addCurrentYellowDropUpstreamArea = function() {
 
 wviz.setFallRate = function(a) {
     wviz.settings.drop.fallRate = a;
+};
+wviz.getFallRate = function(a) {
+    return wviz.settings.drop.fallRate;
 };
 
 wviz.clearAllTrails = function(a) {
