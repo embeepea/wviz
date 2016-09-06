@@ -27,7 +27,7 @@ function kbd_processor(commands, progressMsgFunc, actionMsgFunc) {
         }
     }
     var kp = {
-        addCommand(cmd) {
+        addCommand: function(cmd) {
             var cs = cmd.seq.split('');
             var node = root;
             cs.forEach(function(c) {
