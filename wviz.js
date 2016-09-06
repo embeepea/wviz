@@ -66,7 +66,7 @@ function txClear(ctx) {
 
 function txDrawUpstreamFlowArrows(ctx) {
     if (!wviz.upstreamFlowArrows) { return; }
-    ctx.fillStyle("#ffff00");
+    ctx.fillStyle("#66ffff");
     wviz.upstreamFlowArrows.forEach(function(fa) {
         ctx.beginPath();
         fa.perimeter.forEach(function(xy,i) {
