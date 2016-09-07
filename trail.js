@@ -30,7 +30,7 @@ function segmentBatch(mat) {
             geom.verticesNeedUpdate = true;
             ++n;
         },
-        clear() {
+        clear: function() {
             for (i=0; i<n; ++i) {
                 geom.vertices[2*i].fromArray(HIDDEN_POINT);
                 geom.vertices[2*i+1].fromArray(HIDDEN_POINT);
