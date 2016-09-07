@@ -43046,41 +43046,49 @@
 	            ////
 
 	            //// base arrows:
-	            var baseArrowGeom = new THREE.Geometry();
-	            var g = 0.02;
-	            var a = 0.020;
-	            var b = 0.010;
-	            var c = 0.003;
-	            k = 0;
-	            for (u=0; u<m.Nu; ++u) {
-	                for (v=0; v<m.Nv; ++v) {
-	                    var nuv = m.flow[u][v];
-	                    if (nuv !== null) {
-	                        xy = m.uv_to_xy([u,v]);
-	                        var nxy = m.uv_to_xy(nuv);
-	                        var ar = arrow.garrow([xy[0],xy[1]], [nxy[0],nxy[1]], g, a, b, c);
-	                        ar.headFaces.forEach(function(p) {
-	                            baseArrowGeom.vertices.push(new THREE.Vector3(p[0][0],p[0][1],settings.terrain.baseZLevel3),
-	                                                        new THREE.Vector3(p[1][0],p[1][1],settings.terrain.baseZLevel3),
-	                                                        new THREE.Vector3(p[2][0],p[2][1],settings.terrain.baseZLevel3));
-	                            baseArrowGeom.faces.push(new THREE.Face3(k, k+1, k+2));
-	                            k += 3;
-	                        });
-	                        ar.shaftFaces.forEach(function(p) {
-	                            baseArrowGeom.vertices.push(new THREE.Vector3(p[0][0],p[0][1],settings.terrain.baseZLevel3),
-	                                                        new THREE.Vector3(p[1][0],p[1][1],settings.terrain.baseZLevel3),
-	                                                        new THREE.Vector3(p[2][0],p[2][1],settings.terrain.baseZLevel3));
-	                            baseArrowGeom.faces.push(new THREE.Face3(k, k+1, k+2));
-	                            k += 3;
-	                        });
+	            function makeBaseArrowObj(options) {
+	                if (!options) { options = {}; }
+	                var baseArrowGeom = new THREE.Geometry();
+	                var g = 0.02;
+	                var a = 0.020;
+	                var b = 0.010;
+	                var c = 0.003;
+	                k = 0;
+	                for (u=0; u<m.Nu; ++u) {
+	                    for (v=0; v<m.Nv; ++v) {
+	                        var nuv = m.flow[u][v];
+	                        if (nuv !== null) {
+	                            xy = m.uv_to_xy([u,v]);
+	                            var nxy = m.uv_to_xy(nuv);
+	                            var ar = (options.reverse
+	                                      ? arrow.garrow([nxy[0],nxy[1]], [xy[0],xy[1]], g, a, b, c)
+	                                      : arrow.garrow([xy[0],xy[1]], [nxy[0],nxy[1]], g, a, b, c));
+	                            ar.headFaces.forEach(function(p) {
+	                                baseArrowGeom.vertices.push(new THREE.Vector3(p[0][0],p[0][1],settings.terrain.baseZLevel3),
+	                                                            new THREE.Vector3(p[1][0],p[1][1],settings.terrain.baseZLevel3),
+	                                                            new THREE.Vector3(p[2][0],p[2][1],settings.terrain.baseZLevel3));
+	                                baseArrowGeom.faces.push(new THREE.Face3(k, k+1, k+2));
+	                                k += 3;
+	                            });
+	                            ar.shaftFaces.forEach(function(p) {
+	                                baseArrowGeom.vertices.push(new THREE.Vector3(p[0][0],p[0][1],settings.terrain.baseZLevel3),
+	                                                            new THREE.Vector3(p[1][0],p[1][1],settings.terrain.baseZLevel3),
+	                                                            new THREE.Vector3(p[2][0],p[2][1],settings.terrain.baseZLevel3));
+	                                baseArrowGeom.faces.push(new THREE.Face3(k, k+1, k+2));
+	                                k += 3;
+	                            });
+	                        }
 	                    }
 	                }
+	                var arrowMat = new THREE.MeshBasicMaterial( {
+	                    color: options.color,
+	                    side: THREE.DoubleSide
+	                });
+	                return new THREE.Mesh(baseArrowGeom, arrowMat);
 	            }
-	            var arrowMat = new THREE.MeshBasicMaterial( {
-	                color: 0x000000,
-	                side: THREE.DoubleSide
-	            });
-	            var baseArrowObj = new THREE.Mesh(baseArrowGeom, arrowMat);
+	            var baseArrowObj = makeBaseArrowObj({color: 0x000000});
+	            var baseReverseArrowObj = makeBaseArrowObj({color: 0x660000, reverse: true});
+
 	            ////
 
 	            //var flatTextureContext =
@@ -43131,6 +43139,7 @@
 	                baseFaces: baseQuadObj,
 	                basePoints: basePointObj,
 	                baseArrows: baseArrowObj,
+	                baseReverseArrows: baseReverseArrowObj,
 	                m: m,
 	                terrainTextureContext: terrainTextureContext//,
 	                //flatTextureContext: flatTextureContext
@@ -43829,7 +43838,7 @@
 	        baseZLevel1: baseZ+0.001, // yellow dot
 	        baseZLevel2: baseZ+0.002, // blue dot
 	        baseZLevel3: baseZ+0.003, // dots & arrows
-	        baseZLevel4: baseZ+0.004 // text
+	        baseZLevel4: baseZ+0.004  // text
 	    },
 	    lights: {
 	        directional: [
@@ -44065,7 +44074,7 @@
 	                   wviz.settings.drop.baseNeighborOuterRadius,
 	                   12, 0);
 	        var annMesh = new THREE.Mesh(annGeom, (point[0]===next[0] && point[1]===next[1]) ? nextBaseDropMat : defaultBaseDropMat);
-	        annMesh.position.set(xy[0], xy[1], wviz.settings.terrain.baseZLevel4);
+	        annMesh.position.set(xy[0], xy[1], wviz.settings.terrain.baseZLevel3);
 	        neighbors2d.add( annMesh );
 	    });
 	    return {
@@ -44080,15 +44089,15 @@
 
 	    var defaultLineMat = new THREE.LineBasicMaterial({
 	        color: 0x000000,
-	        linewidth: 3
+	        linewidth: 5
 	    });
 	    var currentLineMat = new THREE.LineBasicMaterial({
 	        color: 0x0000ff,
-	        linewidth: 3
+	        linewidth: 5
 	    });
 	    var nextLineMat = new THREE.LineBasicMaterial({
 	        color: 0x00ff00,
-	        linewidth: 3
+	        linewidth: 5
 	    });
 
 	    var defaultLineGeom = new THREE.Geometry();
@@ -44121,13 +44130,13 @@
 	    if (!wviz.blueDrop || !wviz.blueDrop.uv) { return null; }
 	    var textObj = new THREE.Object3D();
 	    var mat = new THREE.MeshBasicMaterial( {
-	        color: 0x000000
+	        color: 0xffffff
 	    });
 	    var textOptions = {
 	        // font — THREE.Font.
 	        font: wviz.fonts.optimer,
 	        // size — Float. Size of the text.
-	        size: 0.01,
+	        size: 0.015,
 	        // height — Float. Thickness to extrude text. Default is 50.
 	        height: 0.0,
 	        // curveSegments — Integer. Number of points on the curves. Default is 12.
@@ -44145,12 +44154,12 @@
 	            if (wviz.m.inRange([u,v])) {
 	                var xy = wviz.m.uv_to_xy([u,v]);
 	                var oneTextObj = new THREE.Object3D();
-	                var textGeom = new THREE.TextGeometry(sprintf("%.3f", wviz.m.meshData[u][v]),
+	                var textGeom = new THREE.TextGeometry(sprintf("%1d", 1000*wviz.m.meshData[u][v]),
 	                                                      textOptions);
 	                var textMesh = new THREE.Mesh(textGeom, mat);
 	                oneTextObj.add(textMesh);
-	                oneTextObj.position.set(xy[0] + 1.5*textOptions.size,
-	                                        xy[1] - 1.5*textOptions.size,
+	                oneTextObj.position.set(xy[0] + 0.2*textOptions.size,
+	                                        xy[1] - 0.2*textOptions.size,
 	                                        wviz.settings.terrain.baseZLevel4);
 	                oneTextObj.rotation.set(0,0,-Math.PI/2);
 	                textObj.add(oneTextObj);
@@ -44653,8 +44662,11 @@
 	            wviz.d3.add( wviz.yellowDrop.terrainDropObj );
 	            wviz.d2.add( wviz.yellowDrop.flatDropObj );
 
-	            wviz.d2.add(t.baseArrows);
-	            wviz.baseArrows = t.baseArrows;
+	            wviz.baseForwardArrows = t.baseArrows;
+	            wviz.baseReverseArrows = t.baseReverseArrows;
+	            wviz.baseArrows = new THREE.Object3D();
+	            wviz.d2.add(wviz.baseArrows);
+	            wviz.baseArrows.add(wviz.baseForwardArrows);
 	            wviz.baseArrows.visible = wviz._visible.baseArrows;
 
 	            renderTexture();
@@ -44664,6 +44676,16 @@
 	        });
 	    });
 
+	};
+
+	wviz.flipArrows = function() {
+	    var child = wviz.baseArrows.children[0];
+	    wviz.baseArrows.remove(child);
+	    if (child === wviz.baseForwardArrows) {
+	        wviz.baseArrows.add(wviz.baseReverseArrows);
+	    } else {
+	        wviz.baseArrows.add(wviz.baseForwardArrows);
+	    }
 	};
 
 	wviz.setBlueUV = function(uv) {
@@ -44762,10 +44784,12 @@
 	            wviz.upstreamMultiPolygons = [];
 	        }
 	        wviz.upstreamMultiPolygons.push(mp);
-	        if (!("upstreamFlowArrows" in wviz)) {
-	            wviz.upstreamFlowArrows = [];
+	        if (upoints.length > 100) {
+	            if (!("upstreamFlowArrows" in wviz)) {
+	                wviz.upstreamFlowArrows = [];
+	            }
+	            wviz.upstreamFlowArrows.push(upstream.flowArrow(wviz.yellowDrop.uv, wviz.m, upoints));
 	        }
-	        wviz.upstreamFlowArrows.push(upstream.flowArrow(wviz.yellowDrop.uv, wviz.m, upoints));
 	    }
 	    wviz.textureNeedsRendering = true;
 	};
@@ -46246,6 +46270,12 @@
 	        { seq: "sss",
 	          action: function() {
 	              state.displayModalOverlay(JSON.stringify(state.constructState()));
+	          }
+	        },
+	        { seq: "df",
+	          action: function() {
+	              state.wviz.flipArrows();
+	              state.wviz.requestRender();
 	          }
 	        },
 

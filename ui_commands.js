@@ -509,6 +509,12 @@ module.exports = function(state) {
               state.displayModalOverlay(JSON.stringify(state.constructState()));
           }
         },
+        { seq: "df",
+          action: function() {
+              state.wviz.flipArrows();
+              state.wviz.requestRender();
+          }
+        },
 
 //        {
 //            //seq: undefined // no kbd seq for this one

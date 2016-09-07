@@ -848,8 +848,11 @@ wviz.launch = function(canvas, width, height, commands) {
             wviz.d3.add( wviz.yellowDrop.terrainDropObj );
             wviz.d2.add( wviz.yellowDrop.flatDropObj );
 
-            wviz.d2.add(t.baseArrows);
-            wviz.baseArrows = t.baseArrows;
+            wviz.baseForwardArrows = t.baseArrows;
+            wviz.baseReverseArrows = t.baseReverseArrows;
+            wviz.baseArrows = new THREE.Object3D();
+            wviz.d2.add(wviz.baseArrows);
+            wviz.baseArrows.add(wviz.baseForwardArrows);
             wviz.baseArrows.visible = wviz._visible.baseArrows;
 
             renderTexture();
@@ -859,6 +862,16 @@ wviz.launch = function(canvas, width, height, commands) {
         });
     });
 
+};
+
+wviz.flipArrows = function() {
+    var child = wviz.baseArrows.children[0];
+    wviz.baseArrows.remove(child);
+    if (child === wviz.baseForwardArrows) {
+        wviz.baseArrows.add(wviz.baseReverseArrows);
+    } else {
+        wviz.baseArrows.add(wviz.baseForwardArrows);
+    }
 };
 
 wviz.setBlueUV = function(uv) {
@@ -957,10 +970,12 @@ wviz.addCurrentYellowDropUpstreamArea = function() {
             wviz.upstreamMultiPolygons = [];
         }
         wviz.upstreamMultiPolygons.push(mp);
-        if (!("upstreamFlowArrows" in wviz)) {
-            wviz.upstreamFlowArrows = [];
+        if (upoints.length > 100) {
+            if (!("upstreamFlowArrows" in wviz)) {
+                wviz.upstreamFlowArrows = [];
+            }
+            wviz.upstreamFlowArrows.push(upstream.flowArrow(wviz.yellowDrop.uv, wviz.m, upoints));
         }
-        wviz.upstreamFlowArrows.push(upstream.flowArrow(wviz.yellowDrop.uv, wviz.m, upoints));
     }
     wviz.textureNeedsRendering = true;
 };
