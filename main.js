@@ -24,6 +24,7 @@ var state = {
     dropFallStep: 1,
     displayMessages: true,
     currentKeyState: 1,
+    scaleTarget: "world",
     keyStates: [
         null,
         // 1: initial view of terrain from above:
@@ -242,7 +243,6 @@ wviz.addListener("launched", function(e) {
             }
         },
         mouseWheel: function(delta, p) {
-            var s;
             wviz.pick(p.x, p.y, function(x,y,z) {
                 center.position.set(x,y,z);
                 //if (permalink) {
@@ -250,15 +250,19 @@ wviz.addListener("launched", function(e) {
                 //    permalink.updateWindowURL();
                 //}
             });
-            s = Math.exp(delta/20.0);
-            var R = new THREE.Matrix4().makeScale(s,s,s);
-            var M = EventTracker.computeTransform(moving,center,frame, R);
-            moving.matrix.multiplyMatrices(moving.matrix, M);
-            if (permalink) {
-                permalink.set("mm", moving.matrix);
-                permalink.updateWindowURL();
+            var s = Math.exp(delta/20.0);
+            if (state.scaleTarget === "world") {
+                var R = new THREE.Matrix4().makeScale(s,s,s);
+                var M = EventTracker.computeTransform(moving,center,frame, R);
+                moving.matrix.multiplyMatrices(moving.matrix, M);
+                if (permalink) {
+                    permalink.set("mm", moving.matrix);
+                    permalink.updateWindowURL();
+                }
+                moving.matrixWorldNeedsUpdate = true;
+            } else if (state.scaleTarget === "blueDrop") {
+                wviz.setBlueDropRadius(s*wviz.getBlueDropRadius());
             }
-            moving.matrixWorldNeedsUpdate = true;
             wviz.requestRender();
         },
         keyPress: function(event) {

@@ -219,15 +219,15 @@ function makeNeighborPoints() {
     points.forEach(function(point) {
         var xy = wviz.m.uv_to_xy(point);
         var next = wviz.m.flow[wviz.blueDrop.uv[0]][wviz.blueDrop.uv[1]];
-        var sphGeom = new THREE.SphereGeometry( wviz.settings.drop.radius/2, 8, 8 );
+        var sphGeom = new THREE.SphereGeometry( wviz.blueDrop.getRadius()/2, 8, 8 );
         var sphMesh = new THREE.Mesh(sphGeom, (point[0]===next[0] && point[1]===next[1]) ? nextTerrainDropMat : defaultTerrainDropMat);
         sphMesh.position.set(xy[0], xy[1], wviz.m.meshData[point[0]][point[1]]);
         neighbors3d.add( sphMesh );
         var annGeom = new THREE.Geometry();
-        addAnnulus(annGeom, 0, 0, 
-                   wviz.settings.drop.baseNeighborInnerRadius,
-                   wviz.settings.drop.baseNeighborOuterRadius,
-                   12, 0);
+        drop.addAnnulus(annGeom, 0, 0, 
+                        wviz.settings.drop.baseNeighborInnerRadius,
+                        wviz.settings.drop.baseNeighborOuterRadius,
+                        12, 0);
         var annMesh = new THREE.Mesh(annGeom, (point[0]===next[0] && point[1]===next[1]) ? nextBaseDropMat : defaultBaseDropMat);
         annMesh.position.set(xy[0], xy[1], wviz.settings.terrain.baseZLevel3);
         neighbors2d.add( annMesh );
@@ -834,6 +834,14 @@ wviz.getBlueTrails = function() {
 
 wviz.setBlueTrails = function(trails) {
     wviz.blueDrop.setTrails(trails);
+};
+
+wviz.getBlueDropRadius = function() {
+    return wviz.blueDrop.getRadius();
+};
+
+wviz.setBlueDropRadius = function(r) {
+    return wviz.blueDrop.setRadius(r);
 };
 
 module.exports = wviz;

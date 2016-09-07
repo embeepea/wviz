@@ -42,9 +42,8 @@ function makeDrop(wviz, options) {
         shading: THREE.SmoothShading
     });
     var sphereScaleObj = new THREE.Object3D();
-    sphereScaleObj.scale.set(options.terrainDropRadius,
-                             options.terrainDropRadius,
-                             options.terrainDropRadius);
+    var radius = options.terrainDropRadius;
+    sphereScaleObj.scale.set(radius,radius,radius);
     sphereScaleObj.add( new THREE.Mesh( geometry, sphereDropMat ) );
     var spherePositionObj = new THREE.Object3D();
     spherePositionObj.add(sphereScaleObj);
@@ -181,7 +180,7 @@ function makeDrop(wviz, options) {
             var x = xy[0];
             var y = xy[1];
             trailXY.push(xy);
-            var z = wviz.m.meshData[u][v]+wviz.settings.drop.radius/2;
+            var z = wviz.m.meshData[u][v]+radius/2;
             spherePositionObj.visible = true;
             spherePositionObj.position.set(x,y,z);
             circlePositionObj.visible = true;
@@ -206,15 +205,19 @@ function makeDrop(wviz, options) {
             var nextUV = wviz.m.flow[this.uv[0]][this.uv[1]];
             if (nextUV) {
                 this.moveToUV([nextUV[0], nextUV[1]], {advance: true});
-//console.log(terrainTrail);
             }
         },
         setRadius: function(r) {
             sphereScaleObj.scale.set(r,r,r);
+            radius = r;
+        },
+        getRadius: function() {
+            return radius;
         }
     };
 }
 
 module.exports = {
-    makeDrop: makeDrop
+    makeDrop: makeDrop,
+    addAnnulus: addAnnulus
 };

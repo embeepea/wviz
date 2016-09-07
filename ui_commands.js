@@ -515,6 +515,19 @@ module.exports = function(state) {
               state.wviz.requestRender();
           }
         },
+        { seq: "sw",
+          action: function() {
+              state.scaleTarget = "world";
+          },
+          msgfunc: function() { return "scale world"; }
+        },
+        { seq: "sd",
+          action: function() {
+              state.scaleTarget = "blueDrop";
+          },
+          msgfunc: function() { return "scale drop"; }
+        },
+
 
 //        {
 //            //seq: undefined // no kbd seq for this one
