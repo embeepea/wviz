@@ -22,7 +22,7 @@ var state = {
     mouseDragMode: "rotate",   // or "translate"
     nextClickDefinesYellowDotLocation: false,
     dropFallStep: 1,
-    displayMessages: true,
+    displayMessages: false,
     currentKeyState: 1,
     scaleTarget: "world",
     keyStates: [
