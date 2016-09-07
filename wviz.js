@@ -24,7 +24,7 @@ wviz.settings = {
         baseZLevel1: baseZ+0.001, // yellow dot
         baseZLevel2: baseZ+0.002, // blue dot
         baseZLevel3: baseZ+0.003, // dots & arrows
-        baseZLevel4: baseZ+0.004 // text
+        baseZLevel4: baseZ+0.004  // text
     },
     lights: {
         directional: [
@@ -260,7 +260,7 @@ function makeNeighborPoints() {
                    wviz.settings.drop.baseNeighborOuterRadius,
                    12, 0);
         var annMesh = new THREE.Mesh(annGeom, (point[0]===next[0] && point[1]===next[1]) ? nextBaseDropMat : defaultBaseDropMat);
-        annMesh.position.set(xy[0], xy[1], wviz.settings.terrain.baseZLevel4);
+        annMesh.position.set(xy[0], xy[1], wviz.settings.terrain.baseZLevel3);
         neighbors2d.add( annMesh );
     });
     return {
@@ -275,15 +275,15 @@ function makeNeighborHeightLines() {
 
     var defaultLineMat = new THREE.LineBasicMaterial({
         color: 0x000000,
-        linewidth: 3
+        linewidth: 5
     });
     var currentLineMat = new THREE.LineBasicMaterial({
         color: 0x0000ff,
-        linewidth: 3
+        linewidth: 5
     });
     var nextLineMat = new THREE.LineBasicMaterial({
         color: 0x00ff00,
-        linewidth: 3
+        linewidth: 5
     });
 
     var defaultLineGeom = new THREE.Geometry();
@@ -316,13 +316,13 @@ function makeNeighborText() {
     if (!wviz.blueDrop || !wviz.blueDrop.uv) { return null; }
     var textObj = new THREE.Object3D();
     var mat = new THREE.MeshBasicMaterial( {
-        color: 0x000000
+        color: 0xffffff
     });
     var textOptions = {
         // font — THREE.Font.
         font: wviz.fonts.optimer,
         // size — Float. Size of the text.
-        size: 0.01,
+        size: 0.015,
         // height — Float. Thickness to extrude text. Default is 50.
         height: 0.0,
         // curveSegments — Integer. Number of points on the curves. Default is 12.
@@ -340,12 +340,12 @@ function makeNeighborText() {
             if (wviz.m.inRange([u,v])) {
                 var xy = wviz.m.uv_to_xy([u,v]);
                 var oneTextObj = new THREE.Object3D();
-                var textGeom = new THREE.TextGeometry(sprintf("%.3f", wviz.m.meshData[u][v]),
+                var textGeom = new THREE.TextGeometry(sprintf("%1d", 1000*wviz.m.meshData[u][v]),
                                                       textOptions);
                 var textMesh = new THREE.Mesh(textGeom, mat);
                 oneTextObj.add(textMesh);
-                oneTextObj.position.set(xy[0] + 1.5*textOptions.size,
-                                        xy[1] - 1.5*textOptions.size,
+                oneTextObj.position.set(xy[0] + 0.2*textOptions.size,
+                                        xy[1] - 0.2*textOptions.size,
                                         wviz.settings.terrain.baseZLevel4);
                 oneTextObj.rotation.set(0,0,-Math.PI/2);
                 textObj.add(oneTextObj);
