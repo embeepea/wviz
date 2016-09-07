@@ -147,10 +147,10 @@ function parseMesh(meshString) {
         xMin: xMin,
         yMax: yMax,
         yMin: yMin,
-        isEdge(uv) {
+        isEdge: function(uv) {
             return (uv[0]===0 || uv[1]===0 || uv[0]===Nu-1 || uv[1]===Nv-1);
         },
-        inRange(uv) {
+        inRange: function(uv) {
             var i = uv[0];
             var j = uv[1];
             return i >= 0 && i < Nu && j >= 0 && j < Nv;
