@@ -6,7 +6,7 @@ about watersheds, in particular when talking about my
 [watersheds](http://github.com/embeepea/watersheds) project
 [watersheds.fernleafinteractive.com](http://watersheds.fernleafinteractive.com).
 
-It uses the [three.js](threejs.org) WebGL library to display a patch
+It uses the [three.js](http://threejs.org) WebGL library to display a patch
 of virtual terrain, giving the user the ability to change the point
 of view, watch a drop of water flow downhill across the surface, and
 compute and display upstream areas.
@@ -38,7 +38,7 @@ npm run build-all
 Keyboard Commands
 =================
 
-  * ' '    - advance drop once
+  * ' ' (space)   - advance drop once
   * '.'    - advance drop all the way
   * 'aa'   - toggle arrows
   * 'ac'   - toggle axes
@@ -49,30 +49,21 @@ Keyboard Commands
   * 'am'   - toggle display of messages
   * 'ar'   - toggle 2D
   * 'at'   - toggle 3D
-
   * 'ccc'  - full reset
   * 'ct'   - clear trails
-
   * 'dt'   - define target: next shift-click will set yellow dot location
-
   * '#fr'  - set drop advance frame rate to #
   * '#fs'  - set drop advance frame speed to #
-
   * 'h'    - toggle drop neighbor height lines
-
   * 'n'    - toggle drop neighbors
-
   * 'r'    - rotate mode
   * 't'    - translate mode
-
   * 'sss'  - display modal dialog with current snapshot state details
   * 'sn'   - go to next snapshot
   * 'sp'   - go to prev snapshot
   * '#sj'  - jump to snapshot #
   * 'sw'   - scale world
   * 'sd'   - scale blue drop
-
   * 'uc'   - clear upstream areas
   * 'uu'   - draw current upstream area
-
   * 'x'    - toggle number labels on dots
