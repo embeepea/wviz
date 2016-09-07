@@ -376,10 +376,7 @@ wviz.advanceDropOnce = function(a) {
     if (wviz.blueDrop.uv) {
         if (typeof(a)==="undefined") { a = 1; }
         while (a-- > 0) {
-            var nextUV = wviz.m.flow[wviz.blueDrop.uv[0]][wviz.blueDrop.uv[1]];
-            if (nextUV) {
-                wviz.blueDrop.moveToUV(nextUV[0], nextUV[1]);
-            }
+            wviz.blueDrop.advanceOnce();
         }
         //if (!nextUV) {
         //    wviz.blueDrop.endTrail();
@@ -398,7 +395,7 @@ wviz.advanceAll = function(a) {
                 nextUV = wviz.m.flow[wviz.blueDrop.uv[0]][wviz.blueDrop.uv[1]];
                 if (nextUV) {
                     moved = true;
-                    wviz.blueDrop.moveToUV(nextUV[0], nextUV[1]);
+                    wviz.blueDrop.moveToUV([nextUV[0], nextUV[1]]);
                 }
             }
             if (moved) {
@@ -657,7 +654,7 @@ wviz.flipArrows = function() {
 wviz.setBlueUV = function(uv) {
     if (uv) {
         wviz.blueDrop.clearTrail();
-        wviz.blueDrop.moveToUV(uv[0], uv[1]);
+        wviz.blueDrop.moveToUV(uv);
     } else {
         wviz.blueDrop.hide();
     }
@@ -668,7 +665,7 @@ wviz.getBlueUV = function() {
 
 wviz.setYellowUV = function(uv) {
     if (uv) {
-        wviz.yellowDrop.moveToUV(uv[0], uv[1]);
+        wviz.yellowDrop.moveToUV(uv);
     } else {
         wviz.yellowDrop.hide();
     }

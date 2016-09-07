@@ -1,5 +1,6 @@
 var sprintf = require('sprintf');
 var THREE = require('./libs/threejs/three.js');
+var trail = require('./trail.js');
 
 function addCircle(geom,x,y,r,n,z) {
     var a = Math.PI/4;
@@ -64,23 +65,21 @@ function makeDrop(wviz, options) {
     var circleScaleObj = new THREE.Mesh(circleGeom, flatDropMat);
     circlePositionObj.add(circleScaleObj);
 
-    //var flatDropObj = new THREE.Object3D();
-    //flatDropObj.add(circlePositionObj);
-    //flatDropObj.visible = true;
     var trailMat = new THREE.LineBasicMaterial({
         color: 0x0000ff,
         linewidth: wviz.settings.drop.trailLineWidth
     });
     var trailXY = [];
     var trailXYs = [];
-    var lastTrailPoint = null;
     var flatTrailZ = wviz.settings.terrain.baseZLevel4;
-    var terrainTrailObj = new THREE.Object3D();
-    var flatTrailObj = new THREE.Object3D();
-    var terrainTrailTObj = new THREE.Object3D();
-    var flatTrailTObj = new THREE.Object3D();
-    terrainTrailTObj.add(terrainTrailObj);
-    flatTrailTObj.add(flatTrailObj);
+    var terrainTrail = trail.trail({
+        color: 0x0000ff,
+        linewidth: wviz.settings.drop.trailLineWidth
+    });
+    var flatTrail = trail.trail({
+        color: 0x0000ff,
+        linewidth: wviz.settings.drop.trailLineWidth
+    });
 
     var heightLineMat = new THREE.LineBasicMaterial({
         color: 0x0000ff,
@@ -93,8 +92,8 @@ function makeDrop(wviz, options) {
     return {
         terrainDropObj: spherePositionObj,
         flatDropObj: circlePositionObj,
-        terrainTrailTObj: terrainTrailTObj,
-        flatTrailTObj: flatTrailTObj,
+        terrainTrailTObj: terrainTrail.tobj,
+        flatTrailTObj: flatTrail.tobj,
         heightLineTObj: heightLineObjContainer,
         uv: null,
         getTrails: function() {
@@ -119,12 +118,12 @@ function makeDrop(wviz, options) {
             var thisDrop = this;
             function trace(tr) {
                 thisDrop.clearTrail();
-                thisDrop.moveToUV(tr.start[0], tr.start[1]);
+                thisDrop.moveToUV([tr.start[0], tr.start[1]]);
                 var i;
                 for (i=1; i<tr.length; ++i) {
                     var nextUV = wviz.m.flow[thisDrop.uv[0]][thisDrop.uv[1]];
                     if (nextUV) {
-                        thisDrop.moveToUV(nextUV[0], nextUV[1]);
+                        thisDrop.moveToUV([nextUV[0], nextUV[1]]);
                     }
                 }
             }
@@ -148,13 +147,8 @@ function makeDrop(wviz, options) {
                 wviz.textureNeedsRendering = true;
             }
             trailXY = [];
-            terrainTrailTObj.remove(terrainTrailObj);
-            flatTrailTObj.remove(flatTrailObj);
-            terrainTrailObj = new THREE.Object3D();
-            flatTrailObj = new THREE.Object3D();
-            terrainTrailTObj.add(terrainTrailObj);
-            flatTrailTObj.add(flatTrailObj);
-            lastTrailPoint = null;
+            terrainTrail.clear();
+            flatTrail.clear();
         },
         txRenderTrails: function(ctx) {
             if (trailXYs.length > 0) {
@@ -178,19 +172,20 @@ function makeDrop(wviz, options) {
             circlePositionObj.visible = false;
             heightLineObjContainer.visible = false;
         },
-        moveToUV: function(u,v) {
+        moveToUV: function(uv, mOptions) {
+            if (!mOptions) { mOptions = {}; }
+            var u = uv[0];
+            var v = uv[1];
             this.uv = [u,v];
-            var xy = wviz.m.uv_to_xy([u,v]);
+            var xy = wviz.m.uv_to_xy(uv);
             var x = xy[0];
             var y = xy[1];
             trailXY.push(xy);
             var z = wviz.m.meshData[u][v]+wviz.settings.drop.radius/2;
-            wviz.blueDrop.uv = [u,v];
             spherePositionObj.visible = true;
             spherePositionObj.position.set(x,y,z);
             circlePositionObj.visible = true;
             circlePositionObj.position.set(x,y,options.baseZ);
-            //wviz.textureNeedsRendering = true;
             if (heightLineObj) { 
                 heightLineObjContainer.remove(heightLineObj);
             }
@@ -199,22 +194,20 @@ function makeDrop(wviz, options) {
             heightLineGeom.vertices.push(new THREE.Vector3(x,y,wviz.m.meshData[u][v]));
             heightLineObj = new THREE.LineSegments(heightLineGeom, heightLineMat);
             heightLineObjContainer.add(heightLineObj);
-            if (lastTrailPoint) {
-                var terrainTrailGeom = new THREE.Geometry();
-                var flatTrailGeom = new THREE.Geometry();
-                terrainTrailGeom.vertices.push(new THREE.Vector3(lastTrailPoint[0],
-                                                                 lastTrailPoint[1],
-                                                                 lastTrailPoint[2]));
-                terrainTrailGeom.vertices.push(new THREE.Vector3(x, y, wviz.m.meshData[u][v]));
-                terrainTrailObj.add(new THREE.LineSegments(terrainTrailGeom, trailMat));
-                flatTrailGeom.vertices.push(new THREE.Vector3(lastTrailPoint[0],
-                                                              lastTrailPoint[1],
-                                                              flatTrailZ));
-                flatTrailGeom.vertices.push(new THREE.Vector3(x, y, flatTrailZ));
-                flatTrailObj.add(new THREE.LineSegments(flatTrailGeom, trailMat));
+            if (!mOptions.advance) {
+                terrainTrail.clear();
+                flatTrail.clear();
             }
-            lastTrailPoint = [x,y,wviz.m.meshData[u][v]];
-            wviz.emit({type: options.eventType, uv: [u,v]});
+            terrainTrail.addPoint([x, y, wviz.m.meshData[u][v]]);
+            flatTrail.addPoint([x, y, flatTrailZ]);
+            wviz.emit({type: options.eventType, uv: uv});
+        },
+        advanceOnce: function() {
+            var nextUV = wviz.m.flow[this.uv[0]][this.uv[1]];
+            if (nextUV) {
+                this.moveToUV([nextUV[0], nextUV[1]], {advance: true});
+//console.log(terrainTrail);
+            }
         },
         setRadius: function(r) {
             sphereScaleObj.scale.set(r,r,r);

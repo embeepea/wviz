@@ -217,10 +217,10 @@ wviz.addListener("launched", function(e) {
                         var uv = wviz.m.xy_to_uv([x,y]);
                         if (state.nextClickDefinesYellowDotLocation) {
                             state.nextClickDefinesYellowDotLocation = false;
-                            wviz.yellowDrop.moveToUV(uv[0], uv[1]);
+                            wviz.yellowDrop.moveToUV(uv);
                         } else {
                             wviz.blueDrop.clearTrail();
-                            wviz.blueDrop.moveToUV(uv[0], uv[1]);
+                            wviz.blueDrop.moveToUV(uv);
                         }
                         wviz.requestRender();
                     }, function() {
@@ -231,7 +231,7 @@ wviz.addListener("launched", function(e) {
                     wviz.pick(p.x, p.y, function(x,y,z) {
                         var uv = wviz.m.xy_to_uv([x,y]);
                         wviz.yellowDrop.clearTrail();
-                        wviz.yellowDrop.moveToUV(uv[0], uv[1]);
+                        wviz.yellowDrop.moveToUV(uv);
                         wviz.requestRender();
                     }, function() {
                         wviz.yellowDrop.terrainDropObj.visible = false;
