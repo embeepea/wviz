@@ -299,6 +299,25 @@ module.exports = function(state) {
                 getState: function() { return state.wviz.visible("axes"); }
             }
         },
+        {
+            seq: "ag",
+            action: function() {
+                state.wviz.visible("gravityArrows", !state.wviz.visible("gravityArrows"));
+                state.permalink.set("gravityArrows", state.wviz.visible("gravityArrows"));
+                state.permalink.updateWindowURL();
+                state.wviz.requestRender();
+            },
+            msgfunc: function() { return "gravity arrows " + (state.wviz.visible("gravityArrows") ? "on" : "off"); },
+            permalink: {
+                key: "gravityArrows",
+                urlKey: "ag",
+                default: null,
+                parse: parseUtils.parseBoolean,
+                toString: parseUtils.booleanToString,
+                setState: function(v) { state.wviz.visible("gravityArrows",v); },
+                getState: function() { return state.wviz.visible("gravityArrows"); }
+            }
+        },
 
         {
             //seq: undefined // no kbd seq for this one

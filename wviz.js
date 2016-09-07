@@ -145,7 +145,8 @@ wviz._visible = {
     blueDropHeightLine: false,
     d3: true,
     d2: false,
-    axes: false
+    axes: false,
+    gravityArrows: false
 };
 
 function renderTexture() {
@@ -455,6 +456,8 @@ wviz.visible = function(what, v) {
             wviz.d2.visible = v;
         } else if (what === "axes") {
             wviz.axes.visible = v;
+        } else if (what === "gravityArrows") {
+            wviz.gravityArrows.visible = v;
         } else if (what === "basePoints") {
             wviz.basePoints.visible = v;
         } else if (what === "baseArrows") {
@@ -712,6 +715,17 @@ wviz.launch = function(canvas, width, height, commands) {
     });
     wviz.d3.add(wviz.axes);
     wviz.axes.visible = wviz._visible.axes;
+
+    wviz.gravityArrows = axes.gravityArrows({
+        locations: [ [-5,-5,-5], [-5,5,-5], [5,5,-5], [5,-5,-5] ],
+        color: 0x0000ff,
+        length: 3,
+        tipRadius: 0.3,
+        tipHeight: 0.75
+    });
+    wviz.d3.add(wviz.gravityArrows);
+    wviz.gravityArrows.visible = wviz._visible.gravityArrows;
+
     wviz.d3.visible = wviz._visible.d3;
     wviz.d2.visible = wviz._visible.d2;
     var scene = new THREE.Scene();

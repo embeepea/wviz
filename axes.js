@@ -64,7 +64,26 @@ function axes3D(options) {
     return axes;
 }
 
+function gravityArrows(options) {
+    var arrows = new THREE.Object3D();
+    options.locations.forEach(function(p) {
+        var arrow = axis3D({
+            axisColor: options.color,
+            tipColor: options.color,
+            axis: 'Z',
+            length: options.length,
+            tipRadius: options.tipRadius,
+            tipHeight: options.tipHeight
+        });
+        arrow.position.set(p[0], p[1], p[2]);
+        arrows.add(arrow);
+    });
+    arrows.scale.set(1,1,-1);
+    return arrows;
+}
+
 module.exports = {
     axis3D: axis3D,
-    axes3D: axes3D
+    axes3D: axes3D,
+    gravityArrows: gravityArrows
 };
