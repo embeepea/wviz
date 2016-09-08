@@ -215,16 +215,6 @@ function load(meshURL, settings, callback) {
             var baseQuadObj = new THREE.Mesh(quadGeom, quadMat);
 
             callback({
-
-//terrainFaces
-//terrainEdges
-//
-//baseFaces    baseQuadObj,
-//basePoints   basePointObj
-//baseArrows   baseArrowObj
-
-
-
                 terrainFaces: terrainFaceObj,
                 terrainEdges: terrainEdgeObj,
                 baseFaces: baseQuadObj,

@@ -51,17 +51,29 @@ function flowMesh(m) {
     }
     for (u=0; u<m.Nu; ++u) {
         for (v=0; v<m.Nv; ++v) {
-            if (m.isEdge([u,v])) {
+            n = lowestNeighborBelow(m,[u,v]);
+            if (n === null) {
                 flow[u][v] = null;
-            } else {
-                n = lowestNeighborBelow(m,[u,v]);
-                if (n === null) {
-                    flow[u][v] = null;
+                if (!m.isEdge([u,v])) {
                     lowPoints.push([u,v]);
-                } else {
-                    flow[u][v] = n;
                 }
+            } else {
+                flow[u][v] = n;
             }
+            //
+            // Old version, stops immediately when reaching edge:
+            //
+            //if (m.isEdge([u,v])) {
+            //    flow[u][v] = null;
+            //} else {
+            //    n = lowestNeighborBelow(m,[u,v]);
+            //    if (n === null) {
+            //        flow[u][v] = null;
+            //        lowPoints.push([u,v]);
+            //    } else {
+            //        flow[u][v] = n;
+            //    }
+            //}
         }
     }
     m.flow = flow;
