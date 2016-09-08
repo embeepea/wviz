@@ -205,7 +205,9 @@ function makeDrop(wviz, options) {
             var nextUV = wviz.m.flow[this.uv[0]][this.uv[1]];
             if (nextUV) {
                 this.moveToUV([nextUV[0], nextUV[1]], {advance: true});
+                return true;
             }
+            return false;
         },
         setRadius: function(r) {
             sphereScaleObj.scale.set(r,r,r);

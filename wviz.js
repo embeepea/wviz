@@ -20,7 +20,8 @@ wviz.settings = {
         edgeLineWidth: 2,
         //txSize: 1024,
         txSize: 2048,
-        txBackgroundColor: "rgba(136,255,136,0.1)",
+        //txBackgroundColor: "rgba(136,255,136,0.1)",
+        txBackgroundColor: "#eeeeee",
         baseZLevel0: baseZ+0,     // baseFace
         baseZLevel1: baseZ+0.001, // yellow dot
         baseZLevel2: baseZ+0.002, // blue dot
@@ -49,7 +50,7 @@ wviz.settings = {
     },
     drop: {
         radius: 0.05,
-        fallRate: 100,
+        fallRate: 10,
         trailColor: "#0000ff",
         trailLineWidth: 8,
         baseNeighborInnerRadius: 0.015,
@@ -59,10 +60,16 @@ wviz.settings = {
 
 event_emitter(wviz);
 
-function txClear(ctx) {
+function txClear(ctx, options) {
+    if (!options) { options = {}; }
     ctx.clear();
-    ctx.fillStyle(wviz.settings.terrain.txBackgroundColor);
-    ctx.fillRect(-10,-10,20,20);
+    if (options.bgImageId) {
+        var img=document.getElementById(options.bgImageId);
+        ctx.canvasContext.drawImage(img,0,0);
+    } else {
+        ctx.fillStyle(wviz.settings.terrain.txBackgroundColor);
+        ctx.fillRect(-10,-10,20,20);
+    }
 };
 
 function txDrawUpstreamFlowArrows(ctx) {
@@ -151,12 +158,18 @@ wviz._visible = {
 };
 
 function renderTexture() {
-    txClear(wviz.terrainTextureContext);
+    txClear(wviz.terrainTextureContext, {bgImageId: "reliefimg"});
+    txClear(wviz.flatTextureContext);
 
     txDrawUpstreamMultiPolygons(wviz.terrainTextureContext);
     txDrawUpstreamMultiPolygonBoundaries(wviz.terrainTextureContext);
     txDrawUpstreamFlowArrows(wviz.terrainTextureContext);
     txDrawUpstreamFlowArrowBoundaries(wviz.terrainTextureContext);
+
+    txDrawUpstreamMultiPolygons(wviz.flatTextureContext);
+    txDrawUpstreamMultiPolygonBoundaries(wviz.flatTextureContext);
+    txDrawUpstreamFlowArrows(wviz.flatTextureContext);
+    txDrawUpstreamFlowArrowBoundaries(wviz.flatTextureContext);
 
     //if (wviz._visible.gridPoints) {
     //    txDrawGridPoints(wviz.terrainTextureContext);
@@ -169,7 +182,7 @@ function renderTexture() {
 
     if (wviz.blueDrop && wviz.blueDrop.uv) {
         wviz.blueDrop.txRenderTrails(wviz.terrainTextureContext);
-    //    wviz.blueDrop.txRenderTrail(wviz.flatTextureContext);
+        wviz.blueDrop.txRenderTrails(wviz.flatTextureContext);
     }
 }
 
@@ -392,11 +405,7 @@ wviz.advanceAll = function(a) {
             var b = a, nextUV;
             var moved = false;
             while (b--) {
-                nextUV = wviz.m.flow[wviz.blueDrop.uv[0]][wviz.blueDrop.uv[1]];
-                if (nextUV) {
-                    moved = true;
-                    wviz.blueDrop.moveToUV([nextUV[0], nextUV[1]]);
-                }
+                moved |= wviz.blueDrop.advanceOnce();
             }
             if (moved) {
                 wviz.requestRender(function() {
@@ -596,7 +605,7 @@ wviz.launch = function(canvas, width, height, commands) {
             wviz.d2.add(t.basePoints);
 
             wviz.terrainTextureContext = t.terrainTextureContext;
-            //wviz.flatTextureContext = t.flatTextureContext;
+            wviz.flatTextureContext = t.flatTextureContext;
 
             wviz.blueDrop = drop.makeDrop(wviz, {
                 terrainDropColor: 0x3333ff,
@@ -680,7 +689,8 @@ function txDrawUpstreamMultiPolygons(ctx) {
             var bdy = mp.bdy();
             bdy.polylines.forEach(function(pl) {
                 if (pl.length > 2) {
-                    ctx.fillStyle("#ff0000");
+                    //ctx.fillStyle("#ff0000");
+                    ctx.fillStyle("rgba(255,0,0,0.6)");
                     ctx.beginPath();
                     ctx.moveTo(pl[0][0], pl[0][1]);
                     pl.slice(1).forEach(function(p) {

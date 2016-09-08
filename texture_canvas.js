@@ -27,6 +27,7 @@ function TextureCanvas(width, height, xMin, xMax, yMin, yMax) {
     }
 
     return {
+        canvasContext: tctx,
         texture: ctexture,
         clear: function() {
             tctx.clearRect(0, 0, tcanvas.width, tcanvas.height);
