@@ -7,6 +7,23 @@
     <link rel="stylesheet" type="text/css" href="libs/font-awesome-4.6.1/css/font-awesome.min.css">
     <script src="./libs/jquery/jquery.min.js"></script>
     <script type="text/javascript" src="all.js"></script>
+  <style>
+    .fli-logo-y {
+      bottom: 5px;
+    }
+    .fli-logo {
+      position: absolute;
+      right: 5px;
+      padding: 5px;
+      border-radius: 5px;
+      background-color: #ffffff;
+      display: table-cell;
+      vertical-align: middle;
+    }
+    .logo {
+      width: 150px;
+    }
+  </style>
   </head>
   <body>
     <canvas id="thecanvas"></canvas>
@@ -15,6 +32,7 @@
       <div class="modaloverlay header"><center><button>close</button></center></div>
       <div class="modaloverlay content"><textarea></textarea></div>
     </div>
+    <div id="fli-logo" class="fli-logo fli-logo-y"><img class="logo" src="fli-logo-300.png"></div>
     <img id="reliefimg" class="display-none" src="data/relief.png"></img>
   </body>
 </html>
