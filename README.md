@@ -67,3 +67,13 @@ Keyboard Commands
   * 'uc'   - clear upstream areas
   * 'uu'   - draw current upstream area
   * 'x'    - toggle number labels on dots
+
+Copyright / License
+===================
+
+Copyright 2016 FernLeaf Interactive, LLC
+
+This application is distributed under the terms of the Creative
+Commons Attribution-NonCommercial 4.0 International License; see
+[https://creativecommons.org/licenses/by-nc/4.0]
+(https://creativecommons.org/licenses/by-nc/4.0) for details.
