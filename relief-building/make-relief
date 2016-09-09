@@ -1,0 +1,49 @@
+#! /bin/bash
+
+# This script generates the color relief image 'relief.png' from
+# the elevation data file ./ned19_n35x75_w082x50_nc_statewide_2003.img.
+
+# The resulting image 'relief.png' can be copied (manually) into the
+# ../data directory where it will be used by wviz as the base texture
+# image for the terrain.
+
+# The size of image is specified on the "-outsize" line below; this
+# should be a square size that matches the size used for the texture
+# image in ../wviz.js (value given by wviz.settigns.terrain.txSize).
+
+# The colors, along with corresponding elevation levels, are specified
+# in the file color_relief.txt.
+
+# Important note: this script simply creates/updates the file 'relief.png'
+# in this directory, which is ignored by wviz.  In order for wviz to use
+# the new image, you must copy it manuall into the ../data dir.
+
+/bin/rm -f tmp.tif
+gdal_translate \
+  -srcwin 0 0 8000 8000 \
+  -outsize 2048 2048 \
+  ./ned19_n35x75_w082x50_nc_statewide_2003.img \
+  tmp.tif
+
+/bin/rm -f relief.png
+gdaldem color-relief \
+  tmp.tif \
+  color_relief.txt \
+  relief.png \
+  -of PNG \
+  -s 370400
+
+/bin/rm -f tmp.tif
+echo 'wrote relief.png'
+
+# gdaldem hillshade \
+#   foo.tif \
+#   foo.png \
+#   -of PNG \
+#   -s 370400
+
+# gdaldem hillshade input_dem output_hillshade
+#                 [-z ZFactor (default=1)] [-s scale* (default=1)]"
+#                 [-az Azimuth (default=315)] [-alt Altitude (default=45)]
+#                 [-alg ZevenbergenThorne] [-combined]
+#                 [-compute_edges] [-b Band (default=1)] [-of format] [-co "NAME=VALUE"]* [-q]
