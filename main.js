@@ -21,7 +21,7 @@ var state = {
     permalink: permalink,
     mouseDragMode: "rotate",   // or "translate"
     nextClickDefinesYellowDotLocation: false,
-    dropFallStep: 1,
+    dropFallStep: 5,
     displayMessages: false,
     currentKeyState: 1,
     scaleTarget: "world",

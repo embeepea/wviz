@@ -50,7 +50,7 @@ wviz.settings = {
     },
     drop: {
         radius: 0.05,
-        fallRate: 10,
+        fallRate: 1,
         trailColor: "#0000ff",
         trailLineWidth: 8,
         baseNeighborInnerRadius: 0.015,
